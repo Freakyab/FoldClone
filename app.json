@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "fold-clone",
+    "slug": "fold-clone",
+    "scheme": "foldclone",
+    "version": "1.0.0",
+    "icon": "./assets/expo.icon/Assets/image.jpg",
+    "backgroundColor": "#000000",
+    "orientation": "portrait",
+    "android": {
+      "package": "com.foldclone.app"
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

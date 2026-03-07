@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "75297309631",
+    "project_id": "fold-clone",
+    "storage_bucket": "fold-clone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:75297309631:android:631da0881bf5dc83d8970a",
+        "android_client_info": {
+          "package_name": "com.freakyab.foldClone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "75297309631-eubp7ijel1o1ualpg51mg0bbf5q0vof9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALoOPuRzqEekyVgUWDUzxwmqbi81uTzlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "75297309631-eubp7ijel1o1ualpg51mg0bbf5q0vof9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
