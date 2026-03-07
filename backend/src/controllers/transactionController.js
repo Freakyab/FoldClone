@@ -64,8 +64,10 @@ const getTransactions = async (req, res, next) => {
     }
 
     if (tags) {
-      const tagIds = tags.split(',').map((id) => new mongoose.Types.ObjectId(id.trim()));
-      matchStage.tags = { $in: tagIds };
+      const tagKeyArray = tags.split(',').map((k) => k.trim()).filter(Boolean);
+      if (tagKeyArray.length > 0) {
+        matchStage.tagKeys = { $in: tagKeyArray };
+      }
     }
 
     const [result] = await Transaction.aggregate([
@@ -76,14 +78,6 @@ const getTransactions = async (req, res, next) => {
             { $sort: { transactionDate: -1 } },
             { $skip: skip },
             { $limit: limitNum },
-            {
-              $lookup: {
-                from: 'tags',
-                localField: 'tags',
-                foreignField: '_id',
-                as: 'tags',
-              },
-            },
             { $project: { __v: 0 } },
           ],
           totalCount: [{ $count: 'count' }],
@@ -140,7 +134,6 @@ const getTransactionById = async (req, res, next) => {
       _id: id,
       userId: req.user.id,
     })
-      .populate('tags', 'name color')
       .populate('bankId', 'name accountNumber')
       .lean();
 
@@ -175,7 +168,7 @@ const updateTransaction = async (req, res, next) => {
     }
 
     const allowedFields = [
-      'amount', 'type', 'category', 'tags', 'description',
+      'amount', 'type', 'category', 'tagKeys', 'description',
       'note', 'paymentMode', 'transactionDate', 'status',
       'currency', 'referenceId', 'bankId',
     ];

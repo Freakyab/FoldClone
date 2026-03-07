@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TagBadge } from './tag-badge';
+import { findTagSubItem } from './tag-data';
 import type { Transaction } from './types';
 
 interface TransactionListItemProps {
@@ -14,16 +15,23 @@ interface TransactionListItemProps {
   onPress: (transaction: Transaction) => void;
 }
 
-const TAG_ICON_MAP: Record<NonNullable<Transaction['tag']>, React.ComponentProps<typeof MaterialCommunityIcons>['name']> = {
+const LEGACY_TAG_ICON_MAP: Record<string, React.ComponentProps<typeof MaterialCommunityIcons>['name']> = {
   SELF_TRANSFER: 'sync',
   RETURN: 'refresh',
   PAYMENT: 'credit-card-outline',
 };
 
+function getTagDisplay(tag: string | undefined): { label: string; icon?: React.ComponentProps<typeof MaterialCommunityIcons>['name'] } | null {
+  if (!tag) return null;
+  const fromData = findTagSubItem(tag);
+  if (fromData) return { label: fromData.label, icon: undefined };
+  return { label: tag.replace(/_/g, ' '), icon: LEGACY_TAG_ICON_MAP[tag] };
+}
+
 export function TransactionListItem({ transaction, onPress }: TransactionListItemProps) {
   const theme = useTheme();
   const dateLabel = formatTimestamp(transaction.date);
-  const tagIcon = transaction.tag ? TAG_ICON_MAP[transaction.tag] : undefined;
+  const tagDisplay = getTagDisplay(transaction.tags?.[0]);
 
   return (
     <Pressable
@@ -52,10 +60,10 @@ export function TransactionListItem({ transaction, onPress }: TransactionListIte
 
           <View style={styles.rightCluster}>
             {/* Tag badge or "Add Tag" prompt */}
-            {transaction.tag ? (
+            {tagDisplay ? (
               <TagBadge
-                label={transaction.tag.replace(/_/g, ' ')}
-                icon={tagIcon}
+                label={tagDisplay.label}
+                icon={tagDisplay.icon}
               />
             ) : (
               <AddTagBadge />

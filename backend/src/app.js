@@ -15,7 +15,7 @@ const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const bankRoutes = require('./routes/bankRoutes');
-const tagRoutes = require('./routes/tagRoutes');
+const tagCategoryRoutes = require('./routes/tagCategoryRoutes');
 const storageRoutes = require('./routes/storageRoutes');
 
 const app = express();
@@ -49,7 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/banks', bankRoutes);
-app.use('/api/tags', tagRoutes);
+app.use('/api/tag-categories', tagCategoryRoutes);
 app.use('/api/storage', storageRoutes);
 
 app.use((req, res) => {

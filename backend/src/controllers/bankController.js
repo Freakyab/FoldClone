@@ -292,28 +292,37 @@ const uploadBankStatement = async (req, res, next) => {
       currency: currency || 'INR',
     });
 
-    const txDocs = Array.isArray(transactions)
-      ? transactions
-          .filter((tx) => tx)
-          .map((tx) => {
-            const debit = Number(tx.debit) || 0;
-            const credit = Number(tx.credit) || 0;
-            const amount = debit > 0 ? debit : credit;
-            const type = debit > 0 ? 'debit' : 'credit';
-
-            return {
-              userId: req.user.id,
-              bankId: bank._id,
-              amount,
-              type,
-              transactionDate: tx.date ? new Date(tx.date) : new Date(),
-              currency: currency || 'INR',
-              accountIn: accountName || bankName || 'Account',
-              notes: tx.description || '',
-            };
-          })
-          .filter((doc) => doc.amount > 0)
-      : [];
+    const accountIn = bank.accountNumber || bank.name || 'Account';
+    const txDocs = [];
+    if (Array.isArray(transactions)) {
+      for (const tx of transactions) {
+        if (!tx) continue;
+        const debit = Number(tx.debit) || 0;
+        const credit = Number(tx.credit) || 0;
+        const amount = debit > 0 ? debit : credit;
+        const type = debit > 0 ? 'debit' : 'credit';
+        if (amount <= 0) continue;
+        let tagKeys = Array.isArray(tx.tags) ? tx.tags.filter(Boolean) : [];
+        if (tagKeys.length === 0) {
+          tagKeys = [type === 'credit' ? 'credit_misc.others' : 'misc.others'];
+        }
+        const otherDetails = tx.details && typeof tx.details === 'object'
+          ? { ...tx.details, description: tx.details.description ?? tx.description }
+          : { description: tx.description || '' };
+        txDocs.push({
+          userId: req.user.id,
+          bankId: bank._id,
+          amount,
+          type,
+          transactionDate: tx.date ? new Date(tx.date) : new Date(),
+          currency: currency || 'INR',
+          accountIn,
+          notes: null,
+          otherDetails,
+          tagKeys,
+        });
+      }
+    }
 
     let createdTransactions = [];
     if (txDocs.length > 0) {
@@ -415,28 +424,37 @@ const uploadBankStatementFromS3 = async (req, res, next) => {
       currency: currency || 'INR',
     });
 
-    const txDocs = Array.isArray(transactions)
-      ? transactions
-          .filter((tx) => tx)
-          .map((tx) => {
-            const debit = Number(tx.debit) || 0;
-            const credit = Number(tx.credit) || 0;
-            const amount = debit > 0 ? debit : credit;
-            const type = debit > 0 ? 'debit' : 'credit';
-
-            return {
-              userId: req.user.id,
-              bankId: bank._id,
-              amount,
-              type,
-              transactionDate: tx.date ? new Date(tx.date) : new Date(),
-              currency: currency || 'INR',
-              accountIn: accountName || bankName || 'Account',
-              notes: tx.description || '',
-            };
-          })
-          .filter((doc) => doc.amount > 0)
-      : [];
+    const accountIn = bank.accountNumber || bank.name || 'Account';
+    const txDocs = [];
+    if (Array.isArray(transactions)) {
+      for (const tx of transactions) {
+        if (!tx) continue;
+        const debit = Number(tx.debit) || 0;
+        const credit = Number(tx.credit) || 0;
+        const amount = debit > 0 ? debit : credit;
+        const type = debit > 0 ? 'debit' : 'credit';
+        if (amount <= 0) continue;
+        let tagKeys = Array.isArray(tx.tags) ? tx.tags.filter(Boolean) : [];
+        if (tagKeys.length === 0) {
+          tagKeys = [type === 'credit' ? 'credit_misc.others' : 'misc.others'];
+        }
+        const otherDetails = tx.details && typeof tx.details === 'object'
+          ? { ...tx.details, description: tx.details.description ?? tx.description }
+          : { description: tx.description || '' };
+        txDocs.push({
+          userId: req.user.id,
+          bankId: bank._id,
+          amount,
+          type,
+          transactionDate: tx.date ? new Date(tx.date) : new Date(),
+          currency: currency || 'INR',
+          accountIn,
+          notes: null,
+          otherDetails,
+          tagKeys,
+        });
+      }
+    }
 
     let createdTransactions = [];
     if (txDocs.length > 0) {

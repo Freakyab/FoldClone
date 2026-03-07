@@ -11,6 +11,7 @@ interface TransactionSearchBarProps {
   onChangeText: (value: string) => void;
   onFilterPress: () => void;
   placeholder?: string;
+  hasActiveFilter?: boolean;
 }
 
 export function TransactionSearchBar({
@@ -18,6 +19,7 @@ export function TransactionSearchBar({
   onChangeText,
   onFilterPress,
   placeholder = 'Search transactions',
+  hasActiveFilter = false,
 }: TransactionSearchBarProps) {
   const theme = useTheme();
 
@@ -48,14 +50,17 @@ export function TransactionSearchBar({
         onPress={onFilterPress}
         style={({ pressed }) => [
           styles.filterButton,
-          { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+          {
+            borderColor: hasActiveFilter ? theme.accentBlue : theme.border,
+            backgroundColor: hasActiveFilter ? `${theme.accentBlue}22` : theme.backgroundElement,
+          },
           pressed && styles.pressed,
         ]}
       >
         <Feather
           name="sliders"
           size={18}
-          color={theme.text}
+          color={hasActiveFilter ? theme.accentBlue : theme.text}
         />
       </Pressable>
     </View>

@@ -660,6 +660,313 @@ export function LifeInsuranceIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
   );
 }
 
+// ─── Entertainment icons ───────────────────────────────────────────────────────
+
+export function EntertainmentIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="4" width="20" height="14" rx="2" stroke={color} strokeWidth="1.5" />
+      <Path d="M10 9L15 12L10 15V9Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Line x1="2" y1="12" x2="8" y2="12" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function MoviesIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="4" width="20" height="14" rx="2" stroke={color} strokeWidth="1.5" />
+      <Path d="M10 9L15 12L10 15V9Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function ConcertIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M9 18V5L21 3V16" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M9 9L21 7" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M6 21C7.7 21 9 19.7 9 18C9 16.3 7.7 15 6 15C4.3 15 3 16.3 3 18C3 19.7 4.3 21 6 21Z" stroke={color} strokeWidth="1.5" />
+    </Svg>
+  );
+}
+
+export function EventsIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="3" y="4" width="18" height="18" rx="2" stroke={color} strokeWidth="1.5" />
+      <Line x1="16" y1="2" x2="16" y2="6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="8" y1="2" x2="8" y2="6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Line x1="3" y1="10" x2="21" y2="10" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function TravelIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M22 2L2 12L10 13L16 7L22 2Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M2 12L10 13V22L16 16H22" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function MedicalIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 22C12 22 3 16 3 9C3 6.2 7.1 4 12 4C16.9 4 21 6.2 21 9C21 16 12 22 12 22Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 8V14" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M9 11H15" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function PersonalIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="7" r="4" stroke={color} strokeWidth="1.5" />
+      <Path d="M4 21C4 17.1 7.6 14 12 14C16.4 14 20 17.1 20 21" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function FitnessIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6.5 6.5L9 9L6.5 11.5L9 14" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M17.5 10L15 12.5L17.5 15L15 17.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M9 9L12 12L15 9" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function ServicesIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M14.7 6.3L21 12L14.7 17.7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 12H21" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M3 5V19" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function TaxIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M14 2H6C5.4 2 5 2.4 5 3V21C5 21.6 5.4 22 6 22H18C18.6 22 19 21.6 19 21V8L14 2Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M14 2V8H19" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M9 13H15" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M9 17H15" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function TopUpIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="5" y="2" width="14" height="20" rx="2" stroke={color} strokeWidth="1.5" />
+      <Line x1="12" y1="18" x2="12" y2="18.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 14V14.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M8 6H16" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function ChildrenIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="6" r="3" stroke={color} strokeWidth="1.5" />
+      <Path d="M5 21C5 17.1 8.1 14 12 14C15.9 14 19 17.1 19 21" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 9V14" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function PetCareIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 10C10 8 7 8 5 10C3 12 3 15 5 17L12 22L19 17C21 15 21 12 19 10C17 8 14 8 12 10Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx="9" cy="9" r="1.5" stroke={color} strokeWidth="1.5" />
+      <Circle cx="15" cy="9" r="1.5" stroke={color} strokeWidth="1.5" />
+    </Svg>
+  );
+}
+
+export function BusinessIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="7" width="20" height="14" rx="2" stroke={color} strokeWidth="1.5" />
+      <Path d="M16 7V5C16 3.9 15.1 3 14 3H10C8.9 3 8 3.9 8 5V7" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M2 11H22" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function SelfTransferIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M17 1L21 5L17 9" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 11V9C3 7.9 3.9 7 5 7H21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M7 23L3 19L7 15" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M21 13V15C21 16.1 20.1 17 19 17H3" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function SavingIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3V8" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 16V21" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M5 12H3C2.4 12 2 11.6 2 11V5C2 4.4 2.4 4 3 4H9C9.6 4 10 4.4 10 5V7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M19 12H21C21.6 12 22 11.6 22 11V5C22 4.4 21.6 4 21 4H15C14.4 4 14 4.4 14 5V7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M5 12C5 12 5 20 12 20C19 20 19 12 19 12" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function GiftIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M20 12V22H4V12" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M22 7H2V12H22V7Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 22V7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 7H7.5C6.1 7 5 5.9 5 4.5C5 3.1 6.1 2 7.5 2C10 2 12 5 12 7Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 7H16.5C17.9 7 19 5.9 19 4.5C19 3.1 17.9 2 16.5 2C14 2 12 5 12 7Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function LentIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21C16.4 21 20 17.4 20 13C20 8.6 16.4 5 12 5C7.6 5 4 8.6 4 13C4 17.4 7.6 21 12 21Z" stroke={color} strokeWidth="1.5" />
+      <Path d="M12 8V13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 16H12.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function DonationIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21.4L10.5 20C5.3 15.3 2 12 2 8.5C2 5.4 4.4 3 7.5 3C9.2 3 10.9 3.8 12 5C13.1 3.8 14.8 3 16.5 3C19.6 3 22 5.4 22 8.5C22 12 18.7 15.3 13.5 20L12 21.4Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function HiddenChargesIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M17.9 17.9C16.5 19.3 14.5 20 12 20C7.6 20 4 16.4 4 12C4 9.5 4.7 7.5 6.1 6.1" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M6.1 6.1L3 3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M21 21L17.9 17.9" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 4C16.4 4 20 7.6 20 12C20 12.8 19.9 13.6 19.7 14.3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function CashWithdrawalIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="6" width="20" height="12" rx="2" stroke={color} strokeWidth="1.5" />
+      <Line x1="2" y1="10" x2="22" y2="10" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M6 14H6.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M10 14H10.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M14 14H14.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M18 14H18.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function ReturnIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 12C3 7 7 3 12 3C17 3 21 7 21 12C21 17 17 21 12 21" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 12H9" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 12L7 8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// ─── Credit / Income icons ────────────────────────────────────────────────────
+
+export function EarningsIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2V22" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M17 7C17 5.9 16.1 5 15 5H9C7.9 5 7 5.9 7 7V9C7 10.1 7.9 11 9 11H15C16.1 11 17 10.1 17 9V7Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M17 13C17 11.9 16.1 11 15 11H9C7.9 11 7 11.9 7 13V15C7 16.1 7.9 17 9 17H15C16.1 17 17 16.1 17 15V13Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function SalaryIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="7" width="20" height="14" rx="2" stroke={color} strokeWidth="1.5" />
+      <Path d="M16 7V5C16 3.9 15.1 3 14 3H10C8.9 3 8 3.9 8 5V7" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M2 11H22" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function BorrowedIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21C16.4 21 20 17.4 20 13C20 8.6 16.4 5 12 5C7.6 5 4 8.6 4 13C4 17.4 7.6 21 12 21Z" stroke={color} strokeWidth="1.5" />
+      <Path d="M12 8V13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 16H12.01" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function InterestIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2L14.1 9.3L22 12L14.1 14.7L12 22L9.9 14.7L2 12L9.9 9.3L12 2Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function RedemptionIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 20L8 15L12 19L21 10" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M12 19L15 22L21 16" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx="18" cy="6" r="2" stroke={color} strokeWidth="1.5" />
+    </Svg>
+  );
+}
+
+export function CashDepositIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="6" width="20" height="12" rx="2" stroke={color} strokeWidth="1.5" />
+      <Line x1="2" y1="10" x2="22" y2="10" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M12 14V18" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <Path d="M10 16H14" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function DividendsIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Polyline points="22 7 13.5 15.5 8.5 10.5 2 17" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M16 2H22V8" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function CashbackIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8L12 2Z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 export function OthersIcon({ size = 22, color = '#8A8A8A' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

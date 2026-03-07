@@ -15,6 +15,7 @@ import {
   NetWorthWidget,
   OthersWidget,
   SpendingSummaryWidget,
+  UploadPdfWidget,
 } from "@/components/widgets";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -22,13 +23,14 @@ import { useTheme } from "@/hooks/use-theme";
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "others", title: "Others", isVisible: true, order: 0 },
   { id: "netWorth", title: "Net worth", isVisible: true, order: 1 },
-  { id: "bankAccount", title: "Bank account", isVisible: true, order: 2 },
-  { id: "creditCards", title: "Credit cards", isVisible: true, order: 3 },
+  { id: "uploadPdf", title: "Upload PDF", isVisible: true, order: 2 },
+  { id: "bankAccount", title: "Bank account", isVisible: true, order: 3 },
+  { id: "creditCards", title: "Credit cards", isVisible: true, order: 4 },
   {
     id: "spendingSummary",
     title: "Spending summary",
     isVisible: true,
-    order: 4,
+    order: 5,
   },
 ];
 
@@ -176,6 +178,8 @@ export default function HomeScreen() {
             return <OthersWidget key={widget.id} onOverflowPress={() => {}} />;
           if (widget.id === "netWorth")
             return <NetWorthWidget key={widget.id} />;
+          if (widget.id === "uploadPdf")
+            return <UploadPdfWidget key={widget.id} />;
           if (widget.id === "bankAccount")
             return <BankAccountWidget key={widget.id} />;
           if (widget.id === "creditCards")

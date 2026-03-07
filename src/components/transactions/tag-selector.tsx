@@ -17,11 +17,13 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  TAG_CATEGORIES,
+  getCategoriesForTransactionType,
   MOST_USED_TAG_IDS,
+  MOST_USED_TAG_IDS_CREDIT,
   findTagSubItem,
 } from './tag-data';
 import type { TagCategory, TagSubItem } from './tag-data';
+import type { TransactionType } from './types';
 
 // ─────────────────────────────────────────────
 // Types
@@ -32,6 +34,8 @@ interface TagSelectorProps {
   currentTagId?: string;
   onSelect: (tagId: string, label: string) => void;
   onClose: () => void;
+  /** When provided, only categories for this transaction type (credit/debit) are shown. */
+  transactionType?: TransactionType;
   transactionAmount?: number;
   transactionMerchant?: string;
   transactionDate?: Date;
@@ -46,6 +50,7 @@ export function TagSelector({
   currentTagId,
   onSelect,
   onClose,
+  transactionType = 'debit',
   transactionAmount,
   transactionMerchant,
   transactionDate,
@@ -55,15 +60,21 @@ export function TagSelector({
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<TextInput>(null);
 
+  const categoriesForType = useMemo(
+    () => getCategoriesForTransactionType(transactionType),
+    [transactionType]
+  );
+
   const mostUsedItems = useMemo<TagSubItem[]>(() => {
-    return MOST_USED_TAG_IDS.map(id => findTagSubItem(id)).filter(Boolean) as TagSubItem[];
-  }, []);
+    const ids = transactionType === 'credit' ? MOST_USED_TAG_IDS_CREDIT : MOST_USED_TAG_IDS;
+    return ids.map(id => findTagSubItem(id)).filter(Boolean) as TagSubItem[];
+  }, [transactionType]);
 
   const filteredCategories = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return TAG_CATEGORIES;
+    if (!q) return categoriesForType;
 
-    return TAG_CATEGORIES.map(cat => {
+    return categoriesForType.map(cat => {
       const catMatches = cat.label.toLowerCase().includes(q);
       const matchingSubItems = cat.subItems.filter(s =>
         s.label.toLowerCase().includes(q)
@@ -71,7 +82,7 @@ export function TagSelector({
       if (!catMatches && matchingSubItems.length === 0) return null;
       return { ...cat, subItems: catMatches ? cat.subItems : matchingSubItems };
     }).filter(Boolean) as TagCategory[];
-  }, [searchQuery]);
+  }, [categoriesForType, searchQuery]);
 
   const handleSubItemPress = useCallback((item: TagSubItem) => {
     onSelect(item.id, item.label);

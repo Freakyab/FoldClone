@@ -31,17 +31,23 @@ export function WidgetCustomizationModal({
     onChangeWidgets(widgets.map(w => (w.id === id ? { ...w, isVisible: isVisibleValue } : w)));
   }
 
+  const sortedWidgets = React.useMemo(
+    () => [...widgets].sort((a, b) => a.order - b.order),
+    [widgets],
+  );
+
   function move(id: WidgetConfig['id'], direction: 'up' | 'down') {
-    const sorted = [...widgets];
+    const sorted = [...sortedWidgets];
     const index = sorted.findIndex(w => w.id === id);
     if (index === -1) return;
     const nextIndex = direction === 'up' ? index - 1 : index + 1;
     if (nextIndex < 0 || nextIndex >= sorted.length) return;
-    const updated = [...sorted];
-    const tmp = updated[index];
-    updated[index] = updated[nextIndex];
-    updated[nextIndex] = tmp;
-    onChangeWidgets(updated);
+    const reordered = [...sorted];
+    const tmp = reordered[index];
+    reordered[index] = reordered[nextIndex];
+    reordered[nextIndex] = tmp;
+    const withOrder = reordered.map((w, idx) => ({ ...w, order: idx }));
+    onChangeWidgets(withOrder);
   }
 
   return (
@@ -75,7 +81,7 @@ export function WidgetCustomizationModal({
           </ThemedText>
 
           <View style={styles.modalList}>
-            {widgets.map((w, idx) => (
+            {sortedWidgets.map((w, idx) => (
               <ThemedView key={w.id} type="backgroundElement" style={[styles.modalRow, { borderColor: theme.border }]}>
                 <View style={styles.modalRowLeft}>
                   <MaterialCommunityIcons name="drag" size={18} color={theme.textMuted} />
@@ -92,11 +98,11 @@ export function WidgetCustomizationModal({
                     </Pressable>
                     <Pressable
                       onPress={() => move(w.id, 'down')}
-                      disabled={idx === widgets.length - 1}
+                      disabled={idx === sortedWidgets.length - 1}
                       style={({ pressed }) => [
                         styles.reorderButton,
                         pressed && styles.pressed,
-                        idx === widgets.length - 1 && styles.disabled,
+                        idx === sortedWidgets.length - 1 && styles.disabled,
                       ]}>
                       <MaterialCommunityIcons name="chevron-down" size={18} color={theme.textSecondary} />
                     </Pressable>

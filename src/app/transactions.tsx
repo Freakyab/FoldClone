@@ -20,9 +20,10 @@ import { TransactionListItem } from '@/components/transactions/transaction-list-
 import { TransactionSearchBar } from '@/components/transactions/transaction-search-bar';
 import { TransactionsHeader } from '@/components/transactions/transactions-header';
 import { TransactionsTabSwitcher } from '@/components/transactions/transactions-tab-switcher';
-import type { MonthSection, Transaction, TransactionsState } from '@/components/transactions/types';
+import type { FilterState, MonthSection, Transaction, TransactionsState } from '@/components/transactions/types';
+import { DEFAULT_FILTER, TransactionFilterModal, countActiveFilters } from '@/components/modals';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchTransactions, mapTransactionRecordToUI } from '@/store/slices/transactionSlice';
+import { fetchTransactions, mapTransactionRecordToUI, updateTransactionTags } from '@/store/slices/transactionSlice';
 
 /** Flattened row for FlatList: section header or transaction card */
 type TransactionListRow =
@@ -44,9 +45,34 @@ export default function TransactionsScreen() {
     monthSections: [],
   });
 
+  // Filter state
+  const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   // Detail page state
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const prevTagsRef = useRef<string[]>([]);
+
+  const handleTagsChange = useCallback(
+    (tagKeys: string[]) => {
+      if (!selectedTransaction) return;
+      prevTagsRef.current = selectedTransaction.tags ?? [];
+      setSelectedTransaction((prev) => (prev ? { ...prev, tags: tagKeys } : null));
+      return dispatch(
+        updateTransactionTags({ id: selectedTransaction.id, tagKeys }),
+      )
+        .unwrap()
+        .then(() => {})
+        .catch(() => {
+          setSelectedTransaction((prev) =>
+            prev ? { ...prev, tags: prevTagsRef.current } : null,
+          );
+          throw new Error('Failed to save tags');
+        }) as Promise<void>;
+    },
+    [dispatch, selectedTransaction],
+  );
 
   useEffect(() => {
     if (token) {
@@ -62,21 +88,49 @@ export default function TransactionsScreen() {
     const query = state.searchQuery.trim().toLowerCase();
 
     const filtered = allTransactions.filter(tx => {
-      if (!query) return true;
+      // Search query
+      if (query) {
+        const haystack = [
+          tx.merchant,
+          tx.category,
+          tx.notes,
+          ...(tx.tags ?? []),
+          tx.accountId,
+          String(tx.amount),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(query)) return false;
+      }
 
-      const haystack = [
-        tx.merchant,
-        tx.category,
-        tx.notes,
-        tx.tag,
-        tx.accountId,
-        String(tx.amount),
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
+      // Source account filter
+      if (filter.sourceAccountIds.length > 0 && !filter.sourceAccountIds.includes(tx.accountId)) {
+        return false;
+      }
 
-      return haystack.includes(query);
+      // Transaction type filter
+      if (filter.transactionType === 'incoming' && tx.type !== 'credit') return false;
+      if (filter.transactionType === 'outgoing' && tx.type !== 'debit') return false;
+
+      // Tags filter: transaction must have at least one of the selected tag keys
+      if (filter.tags.length > 0 && !tx.tags.some((t) => filter.tags.includes(t))) return false;
+
+      // Date range filter
+      if (filter.dateFrom && tx.date < filter.dateFrom) return false;
+      if (filter.dateTo) {
+        const endOfDay = new Date(filter.dateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (tx.date > endOfDay) return false;
+      }
+
+      // Toggle filters — bookmarked / cash are not yet in the Transaction model,
+      // so when enabled they hide all transactions until the model supports them.
+      if (filter.onlyBookmarked) return false;
+      if (filter.onlyCash) return false;
+      if (filter.onlyWithNotes && !tx.notes) return false;
+
+      return true;
     });
 
     const byKey = new Map<string, Transaction[]>();
@@ -114,7 +168,7 @@ export default function TransactionsScreen() {
     });
 
     return sections;
-  }, [allTransactions, state.searchQuery]);
+  }, [allTransactions, state.searchQuery, filter]);
 
   // Flat ordered list of all transactions for prev/next navigation
   const allTransactionsList = useMemo<Transaction[]>(() => {
@@ -208,6 +262,26 @@ export default function TransactionsScreen() {
 
   const keyExtractor = useCallback((item: TransactionListRow) => item.id, []);
 
+  /** Oldest transaction date — used as the minimum selectable FROM date */
+  const oldestTransactionDate = useMemo<Date | null>(() => {
+    if (allTransactions.length === 0) return null;
+    return allTransactions.reduce<Date>((min, tx) => (tx.date < min ? tx.date : min), allTransactions[0].date);
+  }, [allTransactions]);
+
+  /** Unique accounts derived from the full transaction list for the filter source chips */
+  const accountSources = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const tx of allTransactions) {
+      if (tx.accountId && !seen.has(tx.accountId)) {
+        const lastFour = tx.accountId.slice(-4);
+        seen.set(tx.accountId, lastFour);
+      }
+    }
+    return Array.from(seen.entries()).map(([id, lastFour]) => ({ id, label: `**${lastFour}`, lastFour }));
+  }, [allTransactions]);
+
+  const activeFilterCount = useMemo(() => countActiveFilters(filter), [filter]);
+
   function handleSearchChange(searchQuery: string) {
     setState(prev => ({ ...prev, searchQuery }));
   }
@@ -219,6 +293,14 @@ export default function TransactionsScreen() {
   function handleSelectPress() {}
 
   function handleAddPress() {}
+
+  function handleFilterChange(newFilter: FilterState) {
+    setFilter(newFilter);
+  }
+
+  function handleFilterReset() {
+    setFilter(DEFAULT_FILTER);
+  }
 
   return (
     <ThemedView style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -241,7 +323,8 @@ export default function TransactionsScreen() {
         <TransactionSearchBar
           value={state.searchQuery}
           onChangeText={handleSearchChange}
-          onFilterPress={() => undefined}
+          onFilterPress={() => setIsFilterOpen(true)}
+          hasActiveFilter={activeFilterCount > 0}
         />
 
         <TransactionsTabSwitcher
@@ -292,6 +375,17 @@ export default function TransactionsScreen() {
           ]}
         />
       )}
+
+      {/* ── Transaction filter modal ── */}
+      <TransactionFilterModal
+        isVisible={isFilterOpen}
+        filter={filter}
+        accounts={accountSources}
+        oldestDate={oldestTransactionDate}
+        onFilterChange={handleFilterChange}
+        onReset={handleFilterReset}
+        onClose={() => setIsFilterOpen(false)}
+      />
 
       {/* ── Full-screen transaction detail overlay ── */}
       {selectedTransaction && (
@@ -387,7 +481,7 @@ export default function TransactionsScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
-            <TransactionDetail transaction={selectedTransaction} />
+            <TransactionDetail transaction={selectedTransaction} onTagsChange={handleTagsChange} />
           </Animated.ScrollView>
         </Animated.View>
       )}
