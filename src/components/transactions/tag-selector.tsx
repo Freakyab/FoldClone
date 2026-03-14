@@ -11,9 +11,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -152,7 +152,7 @@ export function TagSelector({
               hitSlop={12}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
-              <Feather name="x" size={20} color={theme.text} />
+              <AppIcon name="x" size={20} color={theme.text} />
             </Pressable>
 
             <ThemedText style={styles.headerTitle}>Tag transaction</ThemedText>
@@ -161,7 +161,7 @@ export function TagSelector({
               hitSlop={12}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
-              <Feather name="check" size={20} color={theme.accentGreen} />
+              <AppIcon name="check" size={20} color={theme.accentGreen} />
             </Pressable>
           </View>
 
@@ -175,7 +175,7 @@ export function TagSelector({
             >
               <View style={styles.previewRow}>
                 <View style={styles.previewMerchantRow}>
-                  <Feather name="edit-3" size={13} color={theme.accentBlue} />
+                  <AppIcon name="pencil-line" size={13} color={theme.accentBlue} />
                   <ThemedText style={styles.previewMerchant}>
                     {transactionMerchant ?? 'Transaction'}
                   </ThemedText>
@@ -224,7 +224,7 @@ export function TagSelector({
               { backgroundColor: theme.backgroundElement, borderColor: theme.border },
             ]}
           >
-            <Feather name="search" size={16} color={theme.textMuted} />
+            <AppIcon name="search" size={16} color={theme.textMuted} />
             <TextInput
               ref={searchRef}
               style={[styles.searchInput, { color: theme.text }]}
@@ -237,7 +237,7 @@ export function TagSelector({
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Feather name="x-circle" size={15} color={theme.textMuted} />
+                <AppIcon name="circle-x" size={15} color={theme.textMuted} />
               </Pressable>
             )}
           </View>

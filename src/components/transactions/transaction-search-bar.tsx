@@ -1,10 +1,9 @@
 import React from 'react';
-import { Feather } from '@expo/vector-icons';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { AppIcon } from '@/components/ui/app-icon';
 
 interface TransactionSearchBarProps {
   value: string;
@@ -25,42 +24,42 @@ export function TransactionSearchBar({
 
   return (
     <View style={styles.row}>
-      <ThemedView
-        type="backgroundElement"
-        style={[styles.inputContainer, { borderColor: theme.border }]}
-      >
-        <Feather
-          name="search"
-          size={18}
-          color={theme.textMuted}
-          style={styles.leftIcon}
-        />
+      <View
+        style={[
+          styles.searchbar,
+          {
+            backgroundColor: theme.backgroundElement,
+            borderColor: theme.border,
+          },
+        ]}>
+        <AppIcon name="search" size={16} color={theme.textMuted} />
         <TextInput
+          placeholder={placeholder}
           value={value}
           onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={theme.textMuted}
           style={[styles.input, { color: theme.text }]}
+          placeholderTextColor={theme.textMuted}
+          returnKeyType="search"
         />
-      </ThemedView>
+      </View>
 
       <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Filter transactions"
         onPress={onFilterPress}
+        accessibilityLabel="Filter transactions"
+        accessibilityRole="button"
         style={({ pressed }) => [
           styles.filterButton,
           {
+            backgroundColor: hasActiveFilter ? `${theme.accentBlue}20` : theme.backgroundElement,
             borderColor: hasActiveFilter ? theme.accentBlue : theme.border,
-            backgroundColor: hasActiveFilter ? `${theme.accentBlue}22` : theme.backgroundElement,
           },
           pressed && styles.pressed,
         ]}
       >
-        <Feather
-          name="sliders"
+        <AppIcon
+          name="sliders-horizontal"
           size={18}
-          color={hasActiveFilter ? theme.accentBlue : theme.text}
+          color={hasActiveFilter ? theme.accentBlue : theme.textMuted}
         />
       </Pressable>
     </View>
@@ -73,32 +72,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
-  inputContainer: {
+  searchbar: {
     flex: 1,
+    borderRadius: 999,
+    borderWidth: 1,
+    minHeight: 40,
+    paddingHorizontal: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-  },
-  leftIcon: {
-    marginRight: Spacing.one,
+    gap: Spacing.two,
   },
   input: {
     flex: 1,
     fontSize: 14,
+    minHeight: 0,
+    paddingVertical: 0,
   },
   filterButton: {
     width: 36,
     height: 36,
     borderRadius: 999,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
 });
 

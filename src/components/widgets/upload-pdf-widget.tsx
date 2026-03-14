@@ -1,9 +1,9 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { AppIcon } from "@/components/ui/app-icon";
 import { BaseCard } from "@/components/ui/home";
 import { UploadStatementForm } from "@/components/upload-statement-form";
 import { Spacing } from "@/constants/theme";
@@ -36,18 +36,10 @@ export function UploadPdfWidget({ onPress }: UploadPdfWidgetProps) {
         <BaseCard>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <MaterialCommunityIcons
-                name="file-pdf-box"
-                size={16}
-                color={theme.textSecondary}
-              />
+              <AppIcon name="file-text" size={16} color={theme.textSecondary} />
               <ThemedText type="smallBold">Upload PDF</ThemedText>
             </View>
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={20}
-              color={theme.textMuted}
-            />
+            <AppIcon name="chevron-right" size={20} color={theme.textMuted} />
           </View>
           <ThemedText type="small" themeColor="textMuted" style={styles.subtitle}>
             Upload a bank statement PDF to import accounts and transactions.
@@ -65,7 +57,7 @@ export function UploadPdfWidget({ onPress }: UploadPdfWidgetProps) {
             <View style={styles.modalHeader}>
               <ThemedText type="subtitle">Upload bank statement</ThemedText>
               <Pressable onPress={closeModal} style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText type="smallBold">✕</ThemedText>
+                <AppIcon name="x" size={18} color={theme.text} />
               </Pressable>
             </View>
             <ThemedText type="small" themeColor="textMuted" style={styles.modalSubtitle}>

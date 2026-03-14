@@ -1,29 +1,13 @@
 import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
+import { type StyleProp, type ViewStyle } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppCard } from '@/components/ui/app-card';
 
 interface BaseCardProps extends React.PropsWithChildren {
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function BaseCard({ children, style }: BaseCardProps) {
-  const theme = useTheme();
-  return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }, style]}>
-      {children}
-    </ThemedView>
-  );
+  return <AppCard style={style}>{children}</AppCard>;
 }
-
-const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: Spacing.three,
-    gap: Spacing.two,
-  },
-});
 

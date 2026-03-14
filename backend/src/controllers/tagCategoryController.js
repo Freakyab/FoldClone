@@ -66,7 +66,10 @@ const getCategoryBySlug = async (req, res, next) => {
 
 /**
  * POST /api/tag-categories
- * Create a new tag category (admin/system). Body: slug, label, description, iconName, iconSvg?, categoryType, sortOrder?, subItems[].
+ * Create a new tag category (admin/system).
+ * Body: slug, label, description, iconName, iconSvg?, categoryType, sortOrder?, subItems[].
+ * iconName should match the shared frontend tag icon registry export name.
+ * iconSvg is retained for backward compatibility, but the app now prefers iconName.
  */
 const createCategory = async (req, res, next) => {
   try {
@@ -93,7 +96,9 @@ const createCategory = async (req, res, next) => {
 
 /**
  * PATCH /api/tag-categories/:id
- * Update a tag category. Body: label, description, iconName, iconSvg, categoryType, sortOrder, subItems, isActive.
+ * Update a tag category.
+ * Body: label, description, iconName, iconSvg, categoryType, sortOrder, subItems, isActive.
+ * iconName should stay aligned with the frontend tag icon registry export name.
  */
 const updateCategory = async (req, res, next) => {
   try {
@@ -205,6 +210,7 @@ const seedCategories = async (req, res, next) => {
           $set: {
             label: item.label,
             description: item.description || '',
+            // Keep the canonical frontend icon key in sync with seeded tag definitions.
             iconName: item.iconName || 'OthersIcon',
             iconSvg: item.iconSvg || null,
             categoryType: item.categoryType || 'debit',

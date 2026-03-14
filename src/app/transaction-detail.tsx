@@ -1,9 +1,9 @@
-import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TransactionDetail } from '@/components/transactions/transaction-detail';
@@ -52,7 +52,7 @@ export default function TransactionDetailScreen() {
           accessibilityLabel="Go back"
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Feather name="chevron-left" size={24} color={theme.text} />
+          <AppIcon name="chevron-left" size={24} color={theme.text} />
         </Pressable>
 
         <ThemedText style={styles.headerTitle}>Transaction</ThemedText>

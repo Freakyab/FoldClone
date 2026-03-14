@@ -1,8 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { TouchableRipple } from 'react-native-paper';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -17,10 +17,7 @@ export function TransactionsTabSwitcher({ activeTab, onTabChange }: Transactions
   const theme = useTheme();
 
   return (
-    <ThemedView
-      type="backgroundElement"
-      style={[styles.container, { borderColor: theme.border }]}
-    >
+    <View style={[styles.container, { borderBottomColor: theme.border }]}>
       <TabPill
         label="All"
         isActive={activeTab === 'all'}
@@ -31,7 +28,7 @@ export function TransactionsTabSwitcher({ activeTab, onTabChange }: Transactions
         isActive={activeTab === 'groups'}
         onPress={() => onTabChange('groups')}
       />
-    </ThemedView>
+    </View>
   );
 }
 
@@ -43,21 +40,19 @@ interface TabPillProps {
 
 function TabPill({ label, isActive, onPress }: TabPillProps) {
   const theme = useTheme();
-  const activeBg = theme.background;
 
   return (
-    <Pressable
+    <TouchableRipple
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
-      style={({ pressed }) => [
+      borderless
+      rippleColor={`${theme.text}14`}
+      style={[
         styles.tab,
-        isActive && { backgroundColor: activeBg },
-        pressed && styles.pressed,
+        isActive && [styles.activeTab, { borderBottomColor: theme.text }],
       ]}
     >
       <ThemedText
-        type="small"
         style={[
           styles.tabLabel,
           isActive && { color: theme.text },
@@ -66,31 +61,29 @@ function TabPill({ label, isActive, onPress }: TabPillProps) {
       >
         {label}
       </ThemedText>
-    </Pressable>
+    </TouchableRipple>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    padding: 2,
-    gap: 2,
+    alignItems: 'flex-end',
+    gap: Spacing.three,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   tab: {
-    flex: 1,
+    minWidth: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
-    paddingVertical: Spacing.one,
+    paddingBottom: 10,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
   },
   tabLabel: {
-    fontWeight: '500',
-  },
-  pressed: {
-    opacity: 0.8,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 

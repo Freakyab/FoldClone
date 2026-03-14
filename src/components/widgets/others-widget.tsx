@@ -1,8 +1,8 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { AppIcon } from "@/components/ui/app-icon";
 import { BaseCard, MiniLine, OverflowButton } from "@/components/ui/home";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -23,11 +23,7 @@ export function OthersWidget({ onOverflowPress }: OthersWidgetProps) {
       {/* Header row: wallet icon + title + overflow button */}
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <MaterialCommunityIcons
-            name="wallet-outline"
-            size={16}
-            color={theme.textSecondary}
-          />
+          <AppIcon name="wallet" size={16} color={theme.textSecondary} />
           <ThemedText type="smallBold">Others</ThemedText>
         </View>
         <OverflowButton
@@ -44,11 +40,7 @@ export function OthersWidget({ onOverflowPress }: OthersWidgetProps) {
         ]}>
         {/* Credit card icon + "Cash on hand" label */}
         <View style={styles.labelRow}>
-          <MaterialCommunityIcons
-            name="credit-card-outline"
-            size={16}
-            color={theme.textMuted}
-          />
+          <AppIcon name="credit-card" size={16} color={theme.textMuted} />
           <ThemedText type="small" themeColor="textMuted">
             Cash on hand
           </ThemedText>

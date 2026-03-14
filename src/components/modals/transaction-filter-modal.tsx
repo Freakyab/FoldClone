@@ -1,5 +1,4 @@
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -15,8 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import type { FilterState, Transaction, TransactionTypeFilter } from '@/components/transactions/types';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
+import type { FilterState, TransactionTypeFilter } from '@/components/transactions/types';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -57,14 +56,14 @@ const TRANSACTION_TYPE_OPTIONS: { value: TransactionTypeFilter; label: string }[
   { value: 'both', label: 'Both' },
 ];
 
-const TAG_OPTIONS: Array<{
+const TAG_OPTIONS: {
   value: string;
   label: string;
-  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-}> = [
-  { value: 'SELF_TRANSFER', label: 'Self Transfer', icon: 'swap-horizontal' },
-  { value: 'RETURN', label: 'Return', icon: 'undo' },
-  { value: 'PAYMENT', label: 'Payment', icon: 'credit-card-outline' },
+  icon: AppIconName;
+}[] = [
+  { value: 'SELF_TRANSFER', label: 'Self Transfer', icon: 'arrow-left-right' },
+  { value: 'RETURN', label: 'Return', icon: 'refresh-ccw' },
+  { value: 'PAYMENT', label: 'Payment', icon: 'credit-card' },
 ];
 
 interface Preset {
@@ -283,7 +282,7 @@ export function TransactionFilterModal({
                 accessibilityRole="button"
                 accessibilityLabel="Close filter"
               >
-                <Feather name="x" size={18} color={theme.text} />
+                <AppIcon name="x" size={18} color={theme.text} />
               </Pressable>
 
               <ThemedText type="subtitle" style={styles.titleText}>
@@ -304,8 +303,8 @@ export function TransactionFilterModal({
                 accessibilityRole="button"
                 accessibilityLabel="Reset all filters"
               >
-                <Feather
-                  name="rotate-ccw"
+                <AppIcon
+                  name="refresh-ccw"
                   size={16}
                   color={activeCount > 0 ? theme.accentBlue : theme.textMuted}
                 />
@@ -423,11 +422,10 @@ export function TransactionFilterModal({
                         accessibilityRole="button"
                         accessibilityState={{ selected: active }}
                       >
-                        <MaterialCommunityIcons
+                        <AppIcon
                           name={opt.icon}
                           size={14}
                           color={active ? theme.accentBlue : theme.textMuted}
-                          style={styles.tagChipIcon}
                         />
                         <ThemedText
                           style={[
@@ -462,7 +460,7 @@ export function TransactionFilterModal({
                       accessibilityRole="button"
                       accessibilityLabel="Clear date range"
                     >
-                      <Feather name="x-circle" size={14} color={theme.accentRed} />
+                      <AppIcon name="circle-x" size={14} color={theme.accentRed} />
                       <ThemedText style={[styles.clearDatesText, { color: theme.accentRed }]}>
                         Clear
                       </ThemedText>
@@ -575,11 +573,9 @@ export function TransactionFilterModal({
 
                 {(filter.dateFrom || filter.dateTo) && (
                   <View style={styles.dateRangeSummary}>
-                    <Feather name="calendar" size={12} color={theme.textMuted} />
+                    <AppIcon name="calendar" size={12} color={theme.textMuted} />
                     <ThemedText themeColor="textMuted" style={styles.dateRangeSummaryText}>
-                      {filter.dateFrom ? formatDate(filter.dateFrom) : '…'}
-                      {' → '}
-                      {filter.dateTo ? formatDate(filter.dateTo) : 'today'}
+                      {`${filter.dateFrom ? formatDate(filter.dateFrom) : '…'} - ${filter.dateTo ? formatDate(filter.dateTo) : 'today'}`}
                     </ThemedText>
                   </View>
                 )}
@@ -591,7 +587,7 @@ export function TransactionFilterModal({
               <FilterSection label="Only show transactions..." theme={theme}>
                 <ToggleRow
                   label="Bookmarked"
-                  icon="bookmark-outline"
+                  icon="bookmark"
                   value={filter.onlyBookmarked}
                   onValueChange={v => setField('onlyBookmarked', v)}
                   theme={theme}
@@ -599,7 +595,7 @@ export function TransactionFilterModal({
                 <View style={[styles.toggleDivider, { backgroundColor: theme.divider }]} />
                 <ToggleRow
                   label="Cash transactions"
-                  icon="cash"
+                  icon="wallet"
                   value={filter.onlyCash}
                   onValueChange={v => setField('onlyCash', v)}
                   theme={theme}
@@ -607,7 +603,7 @@ export function TransactionFilterModal({
                 <View style={[styles.toggleDivider, { backgroundColor: theme.divider }]} />
                 <ToggleRow
                   label="With notes"
-                  icon="note-outline"
+                  icon="sticky-note"
                   value={filter.onlyWithNotes}
                   onValueChange={v => setField('onlyWithNotes', v)}
                   theme={theme}
@@ -720,7 +716,7 @@ function DateChip({ heading, date, isOpen, theme, onPress }: DateChipProps) {
 
 interface ToggleRowProps {
   label: string;
-  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  icon: AppIconName;
   value: boolean;
   onValueChange: (v: boolean) => void;
   theme: ReturnType<typeof useTheme>;
@@ -730,12 +726,7 @@ function ToggleRow({ label, icon, value, onValueChange, theme }: ToggleRowProps)
   return (
     <View style={styles.toggleRow}>
       <View style={styles.toggleLeft}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={18}
-          color={theme.textMuted}
-          style={styles.toggleIcon}
-        />
+        <AppIcon name={icon} size={18} color={theme.textMuted} />
         <ThemedText style={styles.toggleLabel}>{label}</ThemedText>
       </View>
       <Switch

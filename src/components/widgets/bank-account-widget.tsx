@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { AppIcon } from "@/components/ui/app-icon";
 import { ThemedText } from "@/components/themed-text";
 import { BaseCard, MiniBars } from "@/components/ui/home";
 import { Spacing } from "@/constants/theme";
@@ -38,11 +38,7 @@ export function BankAccountWidget() {
             { borderColor: theme.accentBlue },
             pressed && styles.pressed,
           ]}>
-          <MaterialCommunityIcons
-            name="cog-outline"
-            size={18}
-            color={theme.accentBlue}
-          />
+          <AppIcon name="settings" size={18} color={theme.accentBlue} />
         </Pressable>
       </View>
 

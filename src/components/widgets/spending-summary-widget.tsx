@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { ThemedText } from '@/components/themed-text';
 import { SummaryRow } from '@/components/row-helpers';
 import { BaseCard, OverflowButton, WidgetHeader } from '@/components/ui/home';
@@ -36,7 +36,7 @@ export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidget
             pressed && styles.pressed,
           ]}
         >
-          <MaterialCommunityIcons name="fire" size={18} color={theme.accentRed} />
+          <AppIcon name="flame" size={18} color={theme.accentRed} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -47,7 +47,7 @@ export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidget
             pressed && styles.pressed,
           ]}
         >
-          <MaterialCommunityIcons name="fire" size={18} color={theme.accentRed} />
+          <AppIcon name="flame" size={18} color={theme.accentRed} />
         </Pressable>
       </View>
 

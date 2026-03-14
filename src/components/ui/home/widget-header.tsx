@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
+import { AppSectionHeader } from '@/components/ui/app-section-header';
 import { Spacing } from '@/constants/theme';
 
 export interface WidgetHeaderProps {
@@ -13,15 +13,11 @@ export interface WidgetHeaderProps {
 export function WidgetHeader({ title, subtitle, right }: WidgetHeaderProps) {
   return (
     <View style={styles.widgetHeaderRow}>
-      <View style={styles.widgetHeaderText}>
-        <ThemedText type="smallBold">{title}</ThemedText>
-        {subtitle ? (
-          <ThemedText type="small" themeColor="textSecondary">
-            {subtitle}
-          </ThemedText>
-        ) : null}
-      </View>
-      {right ? <View style={styles.widgetHeaderRight}>{right}</View> : null}
+      <AppSectionHeader
+        title={title}
+        subtitle={subtitle}
+        action={right ? <View style={styles.widgetHeaderRight}>{right}</View> : null}
+      />
     </View>
   );
 }
@@ -31,10 +27,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-  },
-  widgetHeaderText: {
-    flex: 1,
-    gap: Spacing.half,
   },
   widgetHeaderRight: {
     alignItems: 'flex-end',

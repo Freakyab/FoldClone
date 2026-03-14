@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Transaction } from './types';
@@ -34,7 +34,6 @@ export function TransactionDetail({
   onPaidToEditPress,
   onTagsChange,
 }: TransactionDetailProps) {
-  const theme = useTheme();
   const [localNotes, setLocalNotes] = useState(transaction.notes ?? '');
   const [isExcluded, setIsExcluded] = useState(transaction.excludedFromCashFlow);
   const [tagSelectorVisible, setTagSelectorVisible] = useState(false);
@@ -112,72 +111,12 @@ export function TransactionDetail({
         onRemoveTag={selectedTagKey ? () => handleRemoveTag(selectedTagKey) : undefined}
       />
 
-      {/* ── Account in ── */}
-      <Pressable
-        onPress={onAccountInPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="view-grid-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>Account in</ThemedText>
-        </View>
-        <View style={styles.rowRight}>
-          <ThemedText type="small" themeColor="textMuted">
-            {accountPeriod}
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textMuted} />
-        </View>
-      </Pressable>
-
-      {/* ── More Details ── */}
-      <Pressable
-        onPress={onMoreDetailsPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="account-details-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>More Details</ThemedText>
-        </View>
-        <Feather name="chevron-right" size={20} color={theme.textMuted} />
-      </Pressable>
-
-      {/* ── Add transaction to group ── */}
-      <Pressable
-        onPress={onAddToGroupPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="folder-plus-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>Add to Group</ThemedText>
-        </View>
-      </Pressable>
+      <DetailOptionsCard
+        accountPeriod={accountPeriod}
+        onAccountInPress={onAccountInPress}
+        onMoreDetailsPress={onMoreDetailsPress}
+        onAddToGroupPress={onAddToGroupPress}
+      />
 
       {/* ── Notes + Add Receipt ── */}
       <NotesSection
@@ -251,7 +190,7 @@ function SummaryCard({
     >
       {/* Pin / bookmark icon top-right */}
       <View style={styles.summaryPinRow}>
-        <Feather name="bookmark" size={16} color={theme.textMuted} />
+        <AppIcon name="bookmark" size={16} color={theme.textMuted} />
       </View>
 
       {/* Amount — large display with superscript sign + currency */}
@@ -273,22 +212,22 @@ function SummaryCard({
             style={({ pressed }) => [
               styles.singleTagChip,
               {
-                backgroundColor: theme.background,
-                borderColor: theme.border,
+                backgroundColor: selectedTagKey ? '#111111' : theme.background,
+                borderColor: selectedTagKey ? '#111111' : theme.border,
               },
               pressed && styles.pressed,
             ]}
           >
             {selectedTagKey && selectedTagLabel && SelectedTagIcon ? (
               <>
-                <SelectedTagIcon size={14} color={theme.text} />
-                <ThemedText style={styles.singleTagChipText}>
+                <SelectedTagIcon size={14} color="#FFFFFF" />
+                <ThemedText style={[styles.singleTagChipText, { color: '#FFFFFF' }]}>
                   {selectedTagLabel.toUpperCase()}
                 </ThemedText>
               </>
             ) : (
               <>
-                <Feather name="search" size={14} color={theme.textMuted} />
+                <AppIcon name="search" size={14} color={theme.textMuted} />
                 <ThemedText style={[styles.singleTagChipText, { color: theme.textMuted }]}>
                   ADD TAG
                 </ThemedText>
@@ -308,7 +247,7 @@ function SummaryCard({
                 pressed && styles.pressed,
               ]}
             >
-              <Feather name="x" size={14} color={theme.textMuted} />
+              <AppIcon name="x" size={14} color={theme.textMuted} />
             </Pressable>
           ) : null}
         </View>
@@ -325,11 +264,7 @@ function SummaryCard({
             <View
               style={[styles.bankIconCircle, { backgroundColor: theme.backgroundSelected }]}
             >
-              <MaterialCommunityIcons
-                name="bank-outline"
-                size={12}
-                color={theme.textMuted}
-              />
+              <AppIcon name="building-2" size={12} color={theme.textMuted} />
             </View>
             <ThemedText style={styles.gridValue} numberOfLines={1}>
               {maskedAccount}
@@ -361,8 +296,8 @@ function SummaryCard({
               accessibilityRole="button"
               style={({ pressed }) => [pressed && styles.pressed]}
             >
-              <Feather
-                name="edit-2"
+              <AppIcon
+                name="pencil"
                 size={13}
                 color={theme.accentBlue}
                 style={styles.editIcon}
@@ -374,12 +309,12 @@ function SummaryCard({
                 { backgroundColor: theme.avatarBackground },
               ]}
             >
-              <Ionicons name="person" size={12} color={theme.text} />
+              <AppIcon name="user-round" size={12} color={theme.text} />
             </View>
             <ThemedText style={styles.gridValue} numberOfLines={1}>{transaction.merchant}</ThemedText>
           </View>
         </View>
-        <Feather name="chevron-right" size={20} color={theme.textMuted} />
+        <AppIcon name="chevron-right" size={20} color={theme.textMuted} />
       </View>
     </ThemedView>
   );
@@ -395,6 +330,80 @@ interface NotesSectionProps {
   onAddReceipt?: () => void;
 }
 
+interface DetailOptionsCardProps {
+  accountPeriod: string;
+  onAccountInPress?: () => void;
+  onMoreDetailsPress?: () => void;
+  onAddToGroupPress?: () => void;
+}
+
+function DetailOptionsCard({
+  accountPeriod,
+  onAccountInPress,
+  onMoreDetailsPress,
+  onAddToGroupPress,
+}: DetailOptionsCardProps) {
+  const theme = useTheme();
+
+  return (
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.optionsCard, { borderColor: theme.border }]}
+    >
+      <OptionRow
+        icon="grid-2x2"
+        label="Account in"
+        value={accountPeriod}
+        onPress={onAccountInPress}
+      />
+      <View style={[styles.optionDivider, { backgroundColor: theme.border }]} />
+      <OptionRow
+        icon="info"
+        label="More Details"
+        onPress={onMoreDetailsPress}
+      />
+      <View style={[styles.optionDivider, { backgroundColor: theme.border }]} />
+      <OptionRow
+        icon="plus"
+        label="Add transaction to group"
+        onPress={onAddToGroupPress}
+      />
+    </ThemedView>
+  );
+}
+
+interface OptionRowProps {
+  icon: AppIconName;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+}
+
+function OptionRow({ icon, label, value, onPress }: OptionRowProps) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.optionRow, pressed && styles.pressed]}
+    >
+      <View style={styles.rowLeft}>
+        <AppIcon name={icon} size={22} color={theme.textMuted} />
+        <ThemedText style={styles.rowLabel}>{label}</ThemedText>
+      </View>
+      <View style={styles.rowRight}>
+        {value ? (
+          <ThemedText type="small" themeColor="textMuted">
+            {value}
+          </ThemedText>
+        ) : null}
+        <AppIcon name="chevron-right" size={20} color={theme.textMuted} />
+      </View>
+    </Pressable>
+  );
+}
+
 function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) {
   const theme = useTheme();
 
@@ -406,11 +415,7 @@ function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) 
       {/* Header row */}
       <View style={styles.notesHeader}>
         <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="calendar-blank-outline"
-            size={16}
-            color={theme.textMuted}
-          />
+          <AppIcon name="calendar" size={16} color={theme.textMuted} />
           <ThemedText type="small" themeColor="textMuted" style={styles.notesLabel}>
             NOTES
           </ThemedText>
@@ -422,11 +427,7 @@ function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) 
           style={({ pressed }) => [pressed && styles.pressed]}
         >
           <View style={styles.rowLeft}>
-            <MaterialCommunityIcons
-              name="receipt"
-              size={14}
-              color={theme.accentBlue}
-            />
+            <AppIcon name="file-text" size={14} color={theme.accentBlue} />
             <ThemedText type="small" style={styles.addReceiptText}>
               ADD RECEIPT
             </ThemedText>
@@ -471,11 +472,7 @@ function CashFlowToggle({ isExcluded, isSelfTransfer, onToggle }: CashFlowToggle
     >
       <View style={styles.cashFlowRow}>
         <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="bell-off-outline"
-            size={22}
-            color={theme.textMuted}
-          />
+          <AppIcon name="bell-off" size={22} color={theme.textMuted} />
           <ThemedText style={styles.cashFlowLabel}>Exclude from Cash Flow</ThemedText>
         </View>
         <Switch
@@ -558,28 +555,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   amountSign: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '500',
-    lineHeight: 62,
+    lineHeight: 46,
     marginRight: 2,
     opacity: 0.7,
   },
   amountCurrency: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
-    lineHeight: 62,
+    lineHeight: 46,
     marginRight: 1,
   },
   amountInteger: {
-    fontSize: 60,
+    fontSize: 36,
     fontWeight: '800',
-    lineHeight: 68,
-    letterSpacing: -2,
+    lineHeight: 42,
+    letterSpacing: -1,
   },
   amountDecimal: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '600',
-    lineHeight: 52,
+    lineHeight: 34,
     letterSpacing: -0.5,
     marginLeft: 1,
   },
@@ -699,6 +696,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 4,
+  },
+
+  optionsCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 18,
+    paddingHorizontal: Spacing.three,
+  },
+  optionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: Spacing.three,
   },
 
   // Shared row style

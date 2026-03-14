@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AppIcon } from "@/components/ui/app-icon";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import {
@@ -20,11 +21,6 @@ import { logoutUser } from "@/store/slices/userSlice";
 interface User {
   username: string;
   avatarUrl?: string;
-}
-
-interface CreditScore {
-  value: number | null;
-  status: "not_fetched" | "loading" | "fetched" | "error";
 }
 
 interface Connections {
@@ -53,11 +49,6 @@ export default function ProfileScreen() {
     if (auth) await signOut(auth);
     dispatch(logoutUser());
   }
-
-  const creditScore: CreditScore = {
-    value: null,
-    status: "not_fetched",
-  };
 
   const connections: Connections = {
     bankAccounts: 2,
@@ -147,17 +138,25 @@ function AppHeader({ title, onBack, onSettings }: AppHeaderProps) {
 
   return (
     <View style={styles.headerRow}>
-      <ThemedText onPress={onBack} type="smallBold" themeColor="textSecondary">
-        X
-      </ThemedText>
+      <Pressable
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        style={({ pressed }) => [styles.headerIconButton, pressed && styles.pressed]}>
+        <AppIcon name="x" size={18} color={theme.textSecondary} />
+      </Pressable>
       <ThemedText type="smallBold">{title}</ThemedText>
-      <ThemedText
+      <Pressable
         onPress={onSettings}
-        type="smallBold"
-        themeColor="textSecondary"
-        style={styles.settingsText}>
-        ⚙
-      </ThemedText>
+        accessibilityRole="button"
+        accessibilityLabel="Open settings"
+        style={({ pressed }) => [
+          styles.headerIconButton,
+          styles.settingsText,
+          pressed && styles.pressed,
+        ]}>
+        <AppIcon name="settings" size={18} color={theme.textSecondary} />
+      </Pressable>
     </View>
   );
 }
@@ -188,103 +187,14 @@ function UserProfileCard({ user, onPress }: UserProfileCardProps) {
         <View style={styles.profileTextContainer}>
           <ThemedText type="smallBold">{user.username}</ThemedText>
         </View>
-        <ThemedText
-          type="smallBold"
-          themeColor="textSecondary"
-          onPress={onPress}>
-          &gt;
-        </ThemedText>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel="Open profile details"
+          style={({ pressed }) => [styles.inlineIconButton, pressed && styles.pressed]}>
+          <AppIcon name="chevron-right" size={18} color={theme.textSecondary} />
+        </Pressable>
       </View>
-    </ThemedView>
-  );
-}
-
-interface CreditScoreCardProps {
-  creditScore: CreditScore;
-  onFetch: () => void;
-}
-
-function CreditScoreCard({ creditScore, onFetch }: CreditScoreCardProps) {
-  const theme = useTheme();
-
-  let label = "Not fetched yet, tap to begin";
-  if (creditScore.status === "loading") {
-    label = "Fetching your credit score...";
-  } else if (creditScore.status === "error") {
-    label = "Something went wrong, tap to retry";
-  } else if (creditScore.status === "fetched") {
-    label = "Your Equifax credit score";
-  }
-
-  const scoreDisplay =
-    creditScore.value === null ? "000" : String(creditScore.value);
-
-  return (
-    <ThemedView
-      type="backgroundElement"
-      style={styles.card}
-      onTouchEnd={onFetch}>
-      <View style={styles.creditRow}>
-        <View style={styles.creditTextColumn}>
-          <ThemedText type="small" themeColor="textSecondary">
-            credit score
-          </ThemedText>
-          <ThemedText type="subtitle">{scoreDisplay}</ThemedText>
-          <ThemedText type="small" themeColor="textMuted">
-            {label}
-          </ThemedText>
-        </View>
-        <View style={styles.equifaxBadge}>
-          <ThemedText type="smallBold" themeColor="accentRed">
-            Equifax
-          </ThemedText>
-        </View>
-      </View>
-    </ThemedView>
-  );
-}
-
-interface ActionRowProps {
-  onInvite: () => void;
-  onContacts: () => void;
-}
-
-function ActionRow({ onInvite, onContacts }: ActionRowProps) {
-  return (
-    <View style={styles.actionRow}>
-      <ActionButton label="Invite" variant="primary" onPress={onInvite} />
-      <ActionButton label="Contacts" variant="secondary" onPress={onContacts} />
-    </View>
-  );
-}
-
-interface ActionButtonProps {
-  label: string;
-  variant: "primary" | "secondary";
-  onPress: () => void;
-}
-
-function ActionButton({ label, variant, onPress }: ActionButtonProps) {
-  const theme = useTheme();
-  const isPrimary = variant === "primary";
-
-  return (
-    <ThemedView
-      type="backgroundElement"
-      style={[
-        styles.actionButton,
-        isPrimary && {
-          borderColor: theme.accentBlue ?? Colors.dark.accentBlue,
-          borderWidth: 1,
-        },
-      ]}
-      onTouchEnd={onPress}>
-      <ThemedText
-        type="smallBold"
-        themeColor={isPrimary ? "accentBlue" : "textSecondary"}
-        style={styles.actionButtonText}>
-        {label}
-      </ThemedText>
     </ThemedView>
   );
 }
@@ -404,8 +314,6 @@ function StatisticCard({
   clickable,
   onPress,
 }: StatisticCardProps) {
-  const theme = useTheme();
-
   return (
     <ThemedView
       type="backgroundElement"
@@ -452,6 +360,13 @@ const styles = StyleSheet.create({
   settingsText: {
     textAlign: "right",
   },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   card: {
     borderRadius: Spacing.four,
     padding: Spacing.four,
@@ -471,6 +386,13 @@ const styles = StyleSheet.create({
   },
   profileTextContainer: {
     flex: 1,
+  },
+  inlineIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
   creditRow: {
     flexDirection: "row",

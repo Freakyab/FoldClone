@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface OverflowButtonProps {
@@ -17,7 +17,7 @@ export function OverflowButton({ onPress, accessibilityLabel }: OverflowButtonPr
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-      <MaterialCommunityIcons name="dots-horizontal" size={18} color={theme.textSecondary} />
+      <AppIcon name="ellipsis" size={18} color={theme.textSecondary} />
     </Pressable>
   );
 }

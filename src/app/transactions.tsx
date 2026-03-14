@@ -8,8 +8,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -84,7 +84,7 @@ export default function TransactionsScreen() {
     return items.map(mapTransactionRecordToUI);
   }, [items]);
 
-  const filteredSections = useMemo<MonthSection[]>(() => {
+  const filteredTransactions = useMemo<Transaction[]>(() => {
     const query = state.searchQuery.trim().toLowerCase();
 
     const filtered = allTransactions.filter(tx => {
@@ -133,9 +133,13 @@ export default function TransactionsScreen() {
       return true;
     });
 
+    return filtered.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [allTransactions, state.searchQuery, filter]);
+
+  const filteredSections = useMemo<MonthSection[]>(() => {
     const byKey = new Map<string, Transaction[]>();
 
-    for (const tx of filtered) {
+    for (const tx of filteredTransactions) {
       const key = `${tx.date.getFullYear()}-${tx.date.getMonth()}`;
       const bucket = byKey.get(key);
       if (bucket) {
@@ -168,18 +172,12 @@ export default function TransactionsScreen() {
     });
 
     return sections;
-  }, [allTransactions, state.searchQuery, filter]);
+  }, [filteredTransactions]);
 
   // Flat ordered list of all transactions for prev/next navigation
   const allTransactionsList = useMemo<Transaction[]>(() => {
-    const txs: Transaction[] = [];
-    for (const section of filteredSections) {
-      for (const tx of section.transactions) {
-        txs.push(tx);
-      }
-    }
-    return txs;
-  }, [filteredSections]);
+    return filteredTransactions;
+  }, [filteredTransactions]);
 
   const selectedIndex = useMemo(() =>
     selectedTransaction
@@ -423,7 +421,7 @@ export default function TransactionsScreen() {
               accessibilityLabel="Go back"
               style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
             >
-              <Feather name="chevron-left" size={24} color={theme.text} />
+              <AppIcon name="chevron-left" size={24} color={theme.text} />
             </Pressable>
 
             <ThemedText style={styles.detailTitle}>Transaction</ThemedText>
@@ -442,7 +440,7 @@ export default function TransactionsScreen() {
                   selectedIndex <= 0 && styles.navButtonDisabled,
                 ]}
               >
-                <Feather
+                <AppIcon
                   name="chevron-left"
                   size={18}
                   color={selectedIndex <= 0 ? theme.textMuted : theme.text}
@@ -460,7 +458,7 @@ export default function TransactionsScreen() {
                   selectedIndex >= allTransactionsList.length - 1 && styles.navButtonDisabled,
                 ]}
               >
-                <Feather
+                <AppIcon
                   name="chevron-right"
                   size={18}
                   color={selectedIndex >= allTransactionsList.length - 1 ? theme.textMuted : theme.text}
@@ -499,7 +497,6 @@ const styles = StyleSheet.create({
 
   listContent: {
     gap: Spacing.two,
-    paddingTop: Spacing.one,
   },
 
   sectionRow: {

@@ -1,39 +1,27 @@
 import React from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 
-type TagIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+interface TagIconProps {
+  size?: number;
+  color?: string;
+}
 
 interface TagBadgeProps {
   label: string;
-  icon?: TagIconName;
+  Icon?: React.ComponentType<TagIconProps>;
 }
 
-export function TagBadge({ label, icon }: TagBadgeProps) {
-  const theme = useTheme();
-
+export function TagBadge({ label, Icon }: TagBadgeProps) {
   return (
     <View
       style={[
         styles.container,
-        {
-          backgroundColor: theme.backgroundSelected,
-          borderColor: theme.border,
-        },
       ]}
     >
-      {icon && (
-        <MaterialCommunityIcons
-          name={icon}
-          size={11}
-          color={theme.text}
-          style={styles.icon}
-        />
-      )}
+      {Icon ? <Icon size={11} color="#FFFFFF" /> : null}
       <ThemedText style={styles.text}>
         {label}
       </ThemedText>
@@ -45,19 +33,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
     paddingHorizontal: Spacing.two,
     paddingVertical: 4,
     borderRadius: 999,
-    borderWidth: 1,
-  },
-  icon: {
-    marginRight: 3,
+    backgroundColor: '#111111',
   },
   text: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
+    color: '#FFFFFF',
   },
 });
 
