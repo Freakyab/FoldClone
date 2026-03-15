@@ -1,9 +1,10 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { AppIcon } from '@/components/ui/app-icon';
+import { AppIconButton } from '@/components/ui/app-icon-button';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface HomeHeaderProps {
@@ -32,27 +33,32 @@ export function HomeHeader({
       <View style={styles.headerTextCol}>
         <ThemedText type="smallBold">{username}</ThemedText>
         <Pressable onPress={onNotificationsPress} style={({ pressed }) => pressed && styles.pressed}>
-          <ThemedText type="small" themeColor="textMuted">
-            {unreadCount}+ unread updates →
-          </ThemedText>
+          <View style={styles.updatesRow}>
+            <ThemedText type="small" themeColor="textMuted">
+              {unreadCount}+ unread updates
+            </ThemedText>
+            <AppIcon name="chevron-right" size={14} color={theme.textMuted} />
+          </View>
         </Pressable>
       </View>
 
       <View style={styles.headerActions}>
-        <Pressable
+        <AppIconButton
           onPress={onNotificationsPress}
-          accessibilityRole="button"
           accessibilityLabel="Notifications"
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <MaterialCommunityIcons name="bell-outline" size={18} color={theme.text} />
-        </Pressable>
-        <Pressable
+          iconName="bell"
+          iconColor={theme.text}
+          iconSize={18}
+          style={styles.iconButton}
+        />
+        <AppIconButton
           onPress={onCustomizePress}
-          accessibilityRole="button"
           accessibilityLabel="Customize widgets"
-          style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-          <MaterialCommunityIcons name="tune-variant" size={18} color={theme.text} />
-        </Pressable>
+          iconName="sliders-horizontal"
+          iconColor={theme.text}
+          iconSize={18}
+          style={styles.iconButton}
+        />
       </View>
     </View>
   );
@@ -71,6 +77,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.half,
   },
+  updatesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
   headerActions: {
     flexDirection: 'row',
     gap: Spacing.one,
@@ -79,14 +90,11 @@ const styles = StyleSheet.create({
   avatar: {
     width: 40,
     height: 40,
-    borderRadius: 999,
+    borderRadius: Radius.full,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: 40,
+    minHeight: 40,
   },
 });
 

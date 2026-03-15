@@ -1,49 +1,77 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { AppIcon } from "@/components/ui/app-icon";
 import { ThemedText } from "@/components/themed-text";
 import { BaseCard, MiniBars } from "@/components/ui/home";
-import { Spacing } from "@/constants/theme";
+import { Radius, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import type { SelectedBankAccount } from "@/store/slices/homeSlice";
 
 import { formatInr } from "@/utils/format-inr";
+import { getBankBrand } from "@/utils/get-bank-brand";
 
-export function BankAccountWidget() {
+export interface BankAccountWidgetProps {
+  account?: SelectedBankAccount | null;
+  totalLinked?: number;
+  isLoading?: boolean;
+}
+
+export function BankAccountWidget({
+  account = null,
+  totalLinked = 0,
+  isLoading = false,
+}: BankAccountWidgetProps) {
   const theme = useTheme();
-  const formattedBalance = formatInr(4245.9);
+  const formattedBalance = formatInr(account?.currentBalance ?? 0);
   const [wholeAmount, fractionAmount] = formattedBalance.split(".");
+  const bankBrand = getBankBrand(account?.bankName);
+  const chartValues =
+    account?.chartValues && account.chartValues.length > 0
+      ? account.chartValues
+      : [0, 0, 0, 0];
 
   return (
-    <BaseCard style={styles.card}>
+    <BaseCard
+      style={[
+        styles.card,
+        { backgroundColor: theme.surface, borderColor: theme.border },
+      ]}>
       <View style={styles.bankHeader}>
         <View style={styles.bankBrand}>
-          <View style={[styles.bankLogo, { backgroundColor: theme.accentRed }]}>
+          <View
+            style={[
+              styles.bankLogo,
+              { backgroundColor: bankBrand.backgroundColor },
+            ]}>
             <ThemedText type="small" style={styles.logoText}>
-              I
+              {bankBrand.label}
             </ThemedText>
           </View>
           <View>
             <ThemedText type="default" style={styles.bankName}>
-              ICICI BANK
+              {account?.bankName ?? "Linked accounts"}
             </ThemedText>
             <ThemedText type="small" themeColor="textMuted">
-              ****7597
+              {isLoading
+                ? "Loading account details..."
+                : account?.maskedAccountNumber ?? "No linked account yet"}
             </ThemedText>
           </View>
         </View>
-        <Pressable
-          style={({ pressed }) => [
-            styles.iconButton,
-            { borderColor: theme.accentBlue },
-            pressed && styles.pressed,
+        <View
+          style={[
+            styles.linkedPill,
+            {
+              backgroundColor: theme.backgroundSelected,
+              borderColor: theme.border,
+            },
           ]}>
-          <MaterialCommunityIcons
-            name="cog-outline"
-            size={18}
-            color={theme.accentBlue}
-          />
-        </Pressable>
+          <AppIcon name="building-2" size={14} color={theme.textMuted} />
+          <ThemedText type="small" themeColor="textMuted">
+            {totalLinked} linked
+          </ThemedText>
+        </View>
       </View>
 
       <View style={styles.balanceSection}>
@@ -65,22 +93,18 @@ export function BankAccountWidget() {
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
       <View style={styles.chartContainer}>
-        <MiniBars
-          values={[2, 3, 3, 2, 4, 6, 5, 4, 6, 7, 6, 9, 14, 18, 26]}
-          height={60}
-          color="#22C55E"
-        />
+        <MiniBars values={chartValues} height={60} color={theme.accentGreen} />
       </View>
 
       <View style={styles.dateMarkers}>
         <ThemedText type="small" themeColor="textMuted">
-          JAN. 28
+          {account?.startLabel ?? "N/A"}
         </ThemedText>
         <ThemedText type="small" themeColor="textMuted">
-          FEB. 27
+          {account?.endLabel ?? "TODAY"}
         </ThemedText>
       </View>
     </BaseCard>
@@ -89,21 +113,7 @@ export function BankAccountWidget() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#111111",
-    borderRadius: 18,
     padding: Spacing.three,
-    borderWidth: 0,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   bankHeader: {
     flexDirection: "row",
@@ -115,6 +125,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.two,
+  },
+  linkedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.one,
+    borderWidth: 1,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
   },
   bankLogo: {
     width: 28,
@@ -128,7 +147,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   bankName: {
-    color: "white",
     fontSize: 16,
     letterSpacing: 0.5,
   },
@@ -137,20 +155,17 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     marginBottom: Spacing.one,
-    color: "#9CA3AF",
   },
   amountRow: {
     flexDirection: "row",
     alignItems: "flex-end",
   },
   balanceAmount: {
-    color: "white",
     fontSize: 32,
     fontWeight: "600",
     letterSpacing: -0.5,
   },
   balanceAmountFraction: {
-    color: "white",
     fontSize: 18,
     fontWeight: "500",
     marginLeft: 2,
@@ -158,7 +173,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#27272f",
     marginBottom: Spacing.two,
   },
   chartContainer: {

@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppIconButton } from '@/components/ui/app-icon-button';
+import type { AppIconName } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { TransactionsHeaderProps } from './types';
@@ -23,27 +24,29 @@ export function TransactionsHeader({
     >
       <View style={styles.leftGroup}>
         {onBackPress && (
-          <IconButton
+          <HeaderIconButton
             icon="chevron-left"
             onPress={onBackPress}
             accessibilityLabel="Go back"
+            iconColor={theme.text}
           />
         )}
-        <ThemedText type="title">Transactions</ThemedText>
+        <ThemedText style={styles.title}>Transactions</ThemedText>
       </View>
 
       <View style={styles.rightGroup}>
         {rightAccessory}
-        <IconButton
-          icon="check-square"
+        <HeaderIconButton
+          icon="square-check"
           onPress={onSelectPress}
           accessibilityLabel="Select multiple transactions"
+          iconColor={theme.text}
         />
-        <IconButton
+        <HeaderIconButton
           icon="plus"
           onPress={onAddPress}
           accessibilityLabel="Add transaction"
-          backgroundColor={theme.accentBlue}
+          backgroundColor={theme.backgroundElement}
           iconColor={theme.text}
         />
       </View>
@@ -52,14 +55,14 @@ export function TransactionsHeader({
 }
 
 interface IconButtonProps {
-  icon: keyof typeof Feather.glyphMap;
+  icon: AppIconName;
   onPress: () => void;
   accessibilityLabel: string;
   backgroundColor?: string;
   iconColor?: string;
 }
 
-function IconButton({
+function HeaderIconButton({
   icon,
   onPress,
   accessibilityLabel,
@@ -67,26 +70,19 @@ function IconButton({
   iconColor,
 }: IconButtonProps) {
   const theme = useTheme();
-  const bg = backgroundColor ?? theme.backgroundElement;
-  const color = iconColor ?? theme.text;
 
   return (
-    <Pressable
+    <AppIconButton
+      iconName={icon}
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [
+      iconColor={iconColor ?? theme.text}
+      iconSize={18}
+      style={[
         styles.iconButton,
-        { backgroundColor: bg, borderColor: theme.border },
-        pressed && styles.pressed,
+        { backgroundColor: backgroundColor ?? theme.backgroundElement, borderColor: theme.border },
       ]}
-    >
-      <Feather
-        name={icon}
-        size={18}
-        color={color}
-      />
-    </Pressable>
+    />
   );
 }
 
@@ -95,28 +91,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.two,
+    marginBottom: Spacing.one,
   },
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
   },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
   rightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.one,
+    gap: 2,
   },
   iconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  pressed: {
-    opacity: 0.7,
+    minWidth: 36,
+    minHeight: 36,
   },
 });
 

@@ -1,22 +1,23 @@
-import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TransactionDetail } from '@/components/transactions/transaction-detail';
-import { mapTransactionRecordToUI } from '@/store/slices/transactionSlice';
+import { mapTransactionRecordToUI, updateTransactionTags } from '@/store/slices/transactionSlice';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
 
   const items = useAppSelector((s) => s.transactions.items);
 
@@ -25,6 +26,11 @@ export default function TransactionDetailScreen() {
     if (!record) return null;
     return mapTransactionRecordToUI(record);
   }, [items, id]);
+
+  const handleTagsChange = (tagKeys: string[]) => {
+    if (!id) return;
+    return dispatch(updateTransactionTags({ id, tagKeys })).unwrap().then(() => {});
+  };
 
   return (
     <ThemedView style={[styles.screen, { backgroundColor: theme.background }]}>
@@ -46,7 +52,7 @@ export default function TransactionDetailScreen() {
           accessibilityLabel="Go back"
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Feather name="chevron-left" size={24} color={theme.text} />
+          <AppIcon name="chevron-left" size={24} color={theme.text} />
         </Pressable>
 
         <ThemedText style={styles.headerTitle}>Transaction</ThemedText>
@@ -68,7 +74,7 @@ export default function TransactionDetailScreen() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <TransactionDetail transaction={transaction} />
+          <TransactionDetail transaction={transaction} onTagsChange={handleTagsChange} />
         </ScrollView>
       ) : (
         <View style={styles.notFound}>
@@ -106,7 +112,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
   notFound: {
     flex: 1,

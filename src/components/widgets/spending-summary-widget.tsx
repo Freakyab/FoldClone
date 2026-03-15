@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { AppIcon } from '@/components/ui/app-icon';
 import { ThemedText } from '@/components/themed-text';
 import { SummaryRow } from '@/components/row-helpers';
 import { BaseCard, OverflowButton, WidgetHeader } from '@/components/ui/home';
@@ -10,10 +10,24 @@ import { useTheme } from '@/hooks/use-theme';
 
 export interface SpendingSummaryWidgetProps {
   onOverflowPress: () => void;
+  monthLabel?: string;
+  items?: { label: string; percent: number }[];
+  isLoading?: boolean;
 }
 
-export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidgetProps) {
+export function SpendingSummaryWidget({
+  onOverflowPress,
+  monthLabel = 'FEB 2026',
+  items = [],
+  isLoading = false,
+}: SpendingSummaryWidgetProps) {
   const theme = useTheme();
+  const displayItems =
+    items.length > 0
+      ? items
+      : [
+          { label: isLoading ? 'Loading...' : 'No spending yet', percent: 0 },
+        ];
 
   return (
     <BaseCard>
@@ -23,7 +37,7 @@ export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidget
       />
 
       <ThemedText type="small" themeColor="textMuted" style={styles.summaryDate}>
-        FEB 2026
+        {isLoading ? 'Loading spending...' : monthLabel.toUpperCase()}
       </ThemedText>
 
       <View style={styles.iconRow}>
@@ -36,7 +50,7 @@ export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidget
             pressed && styles.pressed,
           ]}
         >
-          <MaterialCommunityIcons name="fire" size={18} color={theme.accentRed} />
+          <AppIcon name="flame" size={18} color={theme.accentRed} />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -47,16 +61,14 @@ export function SpendingSummaryWidget({ onOverflowPress }: SpendingSummaryWidget
             pressed && styles.pressed,
           ]}
         >
-          <MaterialCommunityIcons name="fire" size={18} color={theme.accentRed} />
+          <AppIcon name="flame" size={18} color={theme.accentRed} />
         </Pressable>
       </View>
 
       <View style={styles.summaryList}>
-        <SummaryRow label="Investment" percent={37} />
-        <SummaryRow label="Insurance" percent={19} />
-        <SummaryRow label="Food & Drinks" percent={13} />
-        <SummaryRow label="Shopping" percent={12} />
-        <SummaryRow label="Entertainment" percent={11} />
+        {displayItems.map((item) => (
+          <SummaryRow key={item.label} label={item.label} percent={item.percent} />
+        ))}
       </View>
     </BaseCard>
   );

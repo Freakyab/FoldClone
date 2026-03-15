@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { WidgetCustomizationModal } from "@/components/modals";
 import type { WidgetConfig } from "@/components/models/home-widget";
 import { ThemedText } from "@/components/themed-text";
@@ -11,25 +11,27 @@ import { ThemedView } from "@/components/themed-view";
 import { HomeHeader } from "@/components/ui/home";
 import {
   BankAccountWidget,
+  CashFlowWidget,
   CreditCardsWidget,
   NetWorthWidget,
   OthersWidget,
   SpendingSummaryWidget,
+  UploadPdfWidget,
 } from "@/components/widgets";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+import { fetchHomeDashboard } from "@/store/slices/homeSlice";
+import {
+  DEFAULT_WIDGETS,
+  selectWidgets,
+  setWidgets,
+} from "@/store/slices/widgetsSlice";
 
-const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: "others", title: "Others", isVisible: true, order: 0 },
-  { id: "netWorth", title: "Net worth", isVisible: true, order: 1 },
-  { id: "bankAccount", title: "Bank account", isVisible: true, order: 2 },
-  { id: "creditCards", title: "Credit cards", isVisible: true, order: 3 },
-  {
-    id: "spendingSummary",
-    title: "Spending summary",
-    isVisible: true,
-    order: 4,
-  },
+const EMPTY_CASH_FLOW_ENTRIES = [
+  { label: "Incoming", amount: 0, tone: "positive" as const },
+  { label: "Outgoing", amount: 0, tone: "negative" as const },
+  { label: "Invested", amount: 0, tone: "neutral" as const },
+  { label: "Left", amount: 0, tone: "neutral" as const },
 ];
 
 function sortByOrder(widgets: WidgetConfig[]) {
@@ -40,63 +42,22 @@ function getHiddenCount(widgets: WidgetConfig[]) {
   return widgets.filter((w) => !w.isVisible).length;
 }
 
-type HomeAction =
-  | { type: "setAll"; widgets: WidgetConfig[] }
-  | { type: "reset" }
-  | { type: "toggleVisible"; id: WidgetConfig["id"]; isVisible: boolean }
-  | { type: "move"; id: WidgetConfig["id"]; direction: "up" | "down" };
-
-interface HomeState {
-  widgets: WidgetConfig[];
-}
-
-function homeReducer(state: HomeState, action: HomeAction): HomeState {
-  if (action.type === "reset") return { widgets: DEFAULT_WIDGETS };
-
-  if (action.type === "setAll") {
-    const widgets = action.widgets.map((w, idx) => ({ ...w, order: idx }));
-    return { widgets };
-  }
-
-  if (action.type === "toggleVisible") {
-    return {
-      widgets: state.widgets.map((w) =>
-        w.id === action.id ? { ...w, isVisible: action.isVisible } : w,
-      ),
-    };
-  }
-
-  if (action.type === "move") {
-    const sorted = sortByOrder(state.widgets);
-    const index = sorted.findIndex((w) => w.id === action.id);
-    if (index === -1) return state;
-
-    const nextIndex = action.direction === "up" ? index - 1 : index + 1;
-    if (nextIndex < 0 || nextIndex >= sorted.length) return state;
-
-    const updated = [...sorted];
-    const tmp = updated[index];
-    updated[index] = updated[nextIndex];
-    updated[nextIndex] = tmp;
-
-    return { widgets: updated.map((w, idx) => ({ ...w, order: idx })) };
-  }
-
-  return state;
-}
-
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const appDispatch = useAppDispatch();
   const safeAreaInsets = useSafeAreaInsets();
   const userName = useAppSelector((state) => state.user.name) || "User";
+  const specificId = useAppSelector((state) => state.user.specificId);
+  const token = useAppSelector((state) => state.user.token);
+  const homeDashboard = useAppSelector((state) => state.home.data);
+  const homeStatus = useAppSelector((state) => state.home.status);
+  const homeError = useAppSelector((state) => state.home.error);
 
-  const [state, dispatch] = React.useReducer(homeReducer, {
-    widgets: DEFAULT_WIDGETS,
-  });
+  const appWidgets = useAppSelector(selectWidgets);
   const widgetsSorted = React.useMemo(
-    () => sortByOrder(state.widgets),
-    [state.widgets],
+    () => sortByOrder(appWidgets),
+    [appWidgets],
   );
   const visibleWidgets = React.useMemo(
     () => widgetsSorted.filter((w) => w.isVisible),
@@ -111,6 +72,11 @@ export default function HomeScreen() {
   const [draftWidgets, setDraftWidgets] =
     React.useState<WidgetConfig[]>(widgetsSorted);
 
+  React.useEffect(() => {
+    if (!token) return;
+    void appDispatch(fetchHomeDashboard());
+  }, [appDispatch, token]);
+
   function openCustomize() {
     setDraftWidgets(widgetsSorted);
     setIsCustomizeOpen(true);
@@ -121,7 +87,7 @@ export default function HomeScreen() {
   }
 
   function saveCustomize() {
-    dispatch({ type: "setAll", widgets: draftWidgets });
+    appDispatch(setWidgets(draftWidgets));
     setIsCustomizeOpen(false);
   }
 
@@ -175,15 +141,56 @@ export default function HomeScreen() {
           if (widget.id === "others")
             return <OthersWidget key={widget.id} onOverflowPress={() => {}} />;
           if (widget.id === "netWorth")
-            return <NetWorthWidget key={widget.id} />;
+            return (
+              <NetWorthWidget
+                key={specificId ? `netWorth-${specificId}` : widget.id}
+                specificId={specificId || undefined}
+                userName={userName}
+                total={homeDashboard?.netWorth.total ?? 0}
+                chartValues={homeDashboard?.netWorth.chartValues ?? [0, 0]}
+                chartLabel={homeDashboard?.netWorth.chartLabel ?? "Last 180 days"}
+                monthChange={homeDashboard?.netWorth.monthChange ?? 0}
+                yearChange={homeDashboard?.netWorth.yearChange ?? 0}
+                balance={homeDashboard?.netWorth.balance ?? 0}
+                debt={homeDashboard?.netWorth.debt ?? 0}
+                isLoading={homeStatus === "loading"}
+              />
+            );
+          if (widget.id === "uploadPdf")
+            return <UploadPdfWidget key={widget.id} />;
           if (widget.id === "bankAccount")
-            return <BankAccountWidget key={widget.id} />;
+            return (
+              <BankAccountWidget
+                key={widget.id}
+                account={homeDashboard?.bankAccounts?.selectedAccount ?? null}
+                totalLinked={homeDashboard?.bankAccounts?.totalLinked ?? 0}
+                isLoading={homeStatus === "loading"}
+              />
+            );
           if (widget.id === "creditCards")
             return <CreditCardsWidget key={widget.id} />;
+          if (widget.id === "cashFlow")
+            return (
+              <CashFlowWidget
+                key={widget.id}
+                monthLabel={
+                  homeDashboard?.cashFlow.monthLabel ?? "Current month"
+                }
+                entries={homeDashboard?.cashFlow.entries ?? EMPTY_CASH_FLOW_ENTRIES}
+                isLoading={homeStatus === "loading"}
+                helperText={homeStatus === "failed" ? homeError : null}
+                onOverflowPress={() => {}}
+              />
+            );
           if (widget.id === "spendingSummary")
             return (
               <SpendingSummaryWidget
                 key={widget.id}
+                monthLabel={
+                  homeDashboard?.spendingSummary.monthLabel ?? "Current month"
+                }
+                items={homeDashboard?.spendingSummary.items ?? []}
+                isLoading={homeStatus === "loading"}
                 onOverflowPress={() => {}}
               />
             );

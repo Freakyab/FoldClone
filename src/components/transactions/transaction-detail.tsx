@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Transaction } from './types';
@@ -19,7 +19,8 @@ interface TransactionDetailProps {
   onMoreDetailsPress?: () => void;
   onAddToGroupPress?: () => void;
   onPaidToEditPress?: () => void;
-  onTagChange?: (tagId: string, label: string) => void;
+  /** Called when tags change. May return a Promise; if it rejects, local tag state is reverted. */
+  onTagsChange?: (tagKeys: string[]) => void | Promise<void>;
 }
 
 export function TransactionDetail({
@@ -31,14 +32,16 @@ export function TransactionDetail({
   onMoreDetailsPress,
   onAddToGroupPress,
   onPaidToEditPress,
-  onTagChange,
+  onTagsChange,
 }: TransactionDetailProps) {
-  const theme = useTheme();
   const [localNotes, setLocalNotes] = useState(transaction.notes ?? '');
   const [isExcluded, setIsExcluded] = useState(transaction.excludedFromCashFlow);
   const [tagSelectorVisible, setTagSelectorVisible] = useState(false);
-  const [localTagId, setLocalTagId] = useState<string | undefined>(undefined);
-  const [localTagLabel, setLocalTagLabel] = useState<string | undefined>(undefined);
+  const [localTags, setLocalTags] = useState<string[]>((transaction.tags ?? []).slice(0, 1));
+
+  useEffect(() => {
+    setLocalTags((transaction.tags ?? []).slice(0, 1));
+  }, [transaction.id, transaction.tags]);
 
   function handleToggle(next: boolean) {
     setIsExcluded(next);
@@ -50,20 +53,49 @@ export function TransactionDetail({
     onChangeNotes?.(text);
   }
 
-  function handleTagSelect(tagId: string, label: string) {
-    setLocalTagId(tagId);
-    setLocalTagLabel(label);
-    onTagChange?.(tagId, label);
+  async function handleTagSelect(tagId: string) {
+    if (localTags[0] === tagId) {
+      setTagSelectorVisible(false);
+      return;
+    }
+    const prevTags = localTags;
+    const nextTags = [tagId];
+    setLocalTags(nextTags);
+    setTagSelectorVisible(false);
+    const result = onTagsChange?.(nextTags);
+    if (result && typeof (result as Promise<unknown>).then === 'function') {
+      try {
+        await (result as Promise<void>);
+      } catch {
+        setLocalTags(prevTags);
+      }
+    }
   }
 
-  const isSelfTransfer = transaction.tag === 'SELF_TRANSFER';
+  async function handleRemoveTag(tagKey: string) {
+    if (localTags[0] !== tagKey) return;
+    const prevTags = localTags;
+    const nextTags: string[] = [];
+    setLocalTags(nextTags);
+    const result = onTagsChange?.(nextTags);
+    if (result && typeof (result as Promise<unknown>).then === 'function') {
+      try {
+        await (result as Promise<void>);
+      } catch {
+        setLocalTags(prevTags);
+      }
+    }
+  }
+
+  const isSelfTransfer = localTags.some(
+    (k) => k === 'SELF_TRANSFER' || findTagSubItem(k)?.label?.toUpperCase() === 'SELF TRANSFER',
+  );
+  const selectedTagKey = localTags[0];
+  const selectedTagItem = selectedTagKey ? findTagSubItem(selectedTagKey) : undefined;
   const accountPeriod = transaction.date.toLocaleDateString('en-IN', {
     month: 'short',
     year: 'numeric',
   });
-
-  const displayTagId = localTagId;
-  const displayTagLabel = localTagLabel ?? (localTagId ? findTagSubItem(localTagId)?.label : undefined);
 
   return (
     <View style={styles.root}>
@@ -71,124 +103,20 @@ export function TransactionDetail({
       <SummaryCard
         transaction={transaction}
         onPaidToEditPress={onPaidToEditPress}
+        isSelfTransfer={isSelfTransfer}
+        selectedTagKey={selectedTagKey}
+        selectedTagLabel={selectedTagItem?.label}
+        SelectedTagIcon={selectedTagItem?.Icon}
+        onTagPress={() => setTagSelectorVisible(true)}
+        onRemoveTag={selectedTagKey ? () => handleRemoveTag(selectedTagKey) : undefined}
       />
 
-      {/* ── Add tags ── */}
-      <Pressable
-        onPress={() => setTagSelectorVisible(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Add or change transaction tag"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="tag-outline"
-            size={22}
-            color={displayTagId ? theme.accentBlue : theme.textMuted}
-          />
-          <ThemedText
-            style={[
-              styles.rowLabel,
-              displayTagId && { color: theme.accentBlue },
-            ]}
-          >
-            {displayTagLabel ? displayTagLabel : 'Add tags'}
-          </ThemedText>
-        </View>
-        <View style={styles.rowRight}>
-          {displayTagId && (
-            <View
-              style={[
-                styles.tagPill,
-                { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
-              ]}
-            >
-              {(() => {
-                const item = findTagSubItem(displayTagId);
-                if (!item) return null;
-                const { Icon } = item;
-                return <Icon size={12} color={theme.textMuted} />;
-              })()}
-            </View>
-          )}
-          <Feather
-            name={displayTagId ? 'edit-2' : 'plus'}
-            size={18}
-            color={displayTagId ? theme.accentBlue : theme.textMuted}
-          />
-        </View>
-      </Pressable>
-
-      {/* ── Account in ── */}
-      <Pressable
-        onPress={onAccountInPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="view-grid-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>Account in</ThemedText>
-        </View>
-        <View style={styles.rowRight}>
-          <ThemedText type="small" themeColor="textMuted">
-            {accountPeriod}
-          </ThemedText>
-          <Feather name="chevron-right" size={20} color={theme.textMuted} />
-        </View>
-      </Pressable>
-
-      {/* ── More Details ── */}
-      <Pressable
-        onPress={onMoreDetailsPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="account-details-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>More Details</ThemedText>
-        </View>
-        <Feather name="chevron-right" size={20} color={theme.textMuted} />
-      </Pressable>
-
-      {/* ── Add transaction to group ── */}
-      <Pressable
-        onPress={onAddToGroupPress}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.row,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="folder-plus-outline"
-            size={22}
-            color={theme.textMuted}
-          />
-          <ThemedText style={styles.rowLabel}>Add to Group</ThemedText>
-        </View>
-      </Pressable>
+      <DetailOptionsCard
+        accountPeriod={accountPeriod}
+        onAccountInPress={onAccountInPress}
+        onMoreDetailsPress={onMoreDetailsPress}
+        onAddToGroupPress={onAddToGroupPress}
+      />
 
       {/* ── Notes + Add Receipt ── */}
       <NotesSection
@@ -207,9 +135,10 @@ export function TransactionDetail({
       {/* ── Tag selector sheet ── */}
       <TagSelector
         visible={tagSelectorVisible}
-        currentTagId={displayTagId}
-        onSelect={handleTagSelect}
+        currentTagId={selectedTagKey}
+        onSelect={(tagId) => handleTagSelect(tagId)}
         onClose={() => setTagSelectorVisible(false)}
+        transactionType={transaction.type}
         transactionAmount={transaction.amount}
         transactionMerchant={transaction.merchant}
         transactionDate={transaction.date}
@@ -225,11 +154,26 @@ export function TransactionDetail({
 interface SummaryCardProps {
   transaction: Transaction;
   onPaidToEditPress?: () => void;
+  isSelfTransfer?: boolean;
+  selectedTagKey?: string;
+  selectedTagLabel?: string;
+  SelectedTagIcon?: React.ComponentType<{ size?: number; color?: string }>;
+  onTagPress?: () => void;
+  onRemoveTag?: () => void;
 }
 
-function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
+function SummaryCard({
+  transaction,
+  onPaidToEditPress,
+  isSelfTransfer = false,
+  selectedTagKey,
+  selectedTagLabel,
+  SelectedTagIcon,
+  onTagPress,
+  onRemoveTag,
+}: SummaryCardProps) {
   const theme = useTheme();
-  const amountLabel = formatAmount(transaction.amount, transaction.type);
+  const { sign, currencySymbol, integerPart, decimalPart } = formatAmountParts(transaction.amount, transaction.type);
   const dateLabel = transaction.date.toLocaleDateString('en-IN', {
     weekday: 'short',
     day: '2-digit',
@@ -237,7 +181,7 @@ function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
     year: '2-digit',
   });
 
-  const isSelfTransfer = transaction.tag === 'SELF_TRANSFER';
+  const maskedAccount = maskAccountId(transaction.accountId);
 
   return (
     <ThemedView
@@ -246,33 +190,68 @@ function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
     >
       {/* Pin / bookmark icon top-right */}
       <View style={styles.summaryPinRow}>
-        <Feather name="bookmark" size={14} color={theme.textMuted} />
+        <AppIcon name="bookmark" size={16} color={theme.textMuted} />
       </View>
 
-      {/* Amount */}
-      <ThemedText style={styles.summaryAmount}>{amountLabel}</ThemedText>
+      {/* Amount — large display with superscript sign + currency */}
+      <View style={styles.amountRow}>
+        <ThemedText style={styles.amountSign}>{sign}</ThemedText>
+        <ThemedText style={styles.amountCurrency}>{currencySymbol}</ThemedText>
+        <ThemedText style={styles.amountInteger}>{integerPart}</ThemedText>
+        {decimalPart ? (
+          <ThemedText style={styles.amountDecimal}>.{decimalPart}</ThemedText>
+        ) : null}
+      </View>
 
-      {/* Tag badge */}
-      {transaction.tag && (
-        <View
-          style={[
-            styles.tagBadge,
-            { backgroundColor: theme.background, borderColor: theme.border },
-          ]}
-        >
-          {isSelfTransfer && (
-            <MaterialCommunityIcons
-              name="sync"
-              size={12}
-              color={theme.textMuted}
-              style={styles.tagIcon}
-            />
-          )}
-          <ThemedText type="small" themeColor="textMuted" style={styles.tagText}>
-            {transaction.tag.replace('_', ' ')}
-          </ThemedText>
+      <View style={styles.tagsSection}>
+        <View style={styles.tagChipRow}>
+          <Pressable
+            onPress={onTagPress}
+            accessibilityRole="button"
+            accessibilityLabel={selectedTagLabel ? `Edit tag ${selectedTagLabel}` : 'Add tag'}
+            style={({ pressed }) => [
+              styles.singleTagChip,
+              {
+                backgroundColor: selectedTagKey ? '#111111' : theme.background,
+                borderColor: selectedTagKey ? '#111111' : theme.border,
+              },
+              pressed && styles.pressed,
+            ]}
+          >
+            {selectedTagKey && selectedTagLabel && SelectedTagIcon ? (
+              <>
+                <SelectedTagIcon size={14} color="#FFFFFF" />
+                <ThemedText style={[styles.singleTagChipText, { color: '#FFFFFF' }]}>
+                  {selectedTagLabel.toUpperCase()}
+                </ThemedText>
+              </>
+            ) : (
+              <>
+                <AppIcon name="search" size={14} color={theme.textMuted} />
+                <ThemedText style={[styles.singleTagChipText, { color: theme.textMuted }]}>
+                  ADD TAG
+                </ThemedText>
+              </>
+            )}
+          </Pressable>
+
+          {selectedTagKey && onRemoveTag ? (
+            <Pressable
+              onPress={onRemoveTag}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove tag ${selectedTagLabel ?? selectedTagKey}`}
+              style={({ pressed }) => [
+                styles.singleTagRemove,
+                { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppIcon name="x" size={14} color={theme.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
-      )}
+      </View>
 
       {/* FROM / ON row */}
       <View style={[styles.gridDivider, { borderColor: theme.border }]} />
@@ -285,21 +264,22 @@ function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
             <View
               style={[styles.bankIconCircle, { backgroundColor: theme.backgroundSelected }]}
             >
-              <MaterialCommunityIcons
-                name="bank-outline"
-                size={12}
-                color={theme.textMuted}
-              />
+              <AppIcon name="building-2" size={12} color={theme.textMuted} />
             </View>
-            <ThemedText style={styles.gridValue}>{transaction.accountId}</ThemedText>
+            <ThemedText style={styles.gridValue} numberOfLines={1}>
+              {maskedAccount}
+            </ThemedText>
           </View>
         </View>
+
+        {/* Vertical divider */}
+        <View style={[styles.gridVerticalDivider, { backgroundColor: theme.border }]} />
 
         <View style={[styles.gridCell, styles.gridCellRight]}>
           <ThemedText type="small" themeColor="textMuted" style={styles.gridLabel}>
             ON
           </ThemedText>
-          <ThemedText style={styles.gridValue}>{dateLabel}</ThemedText>
+          <ThemedText style={styles.gridValue} numberOfLines={1}>{dateLabel}</ThemedText>
         </View>
       </View>
 
@@ -316,8 +296,8 @@ function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
               accessibilityRole="button"
               style={({ pressed }) => [pressed && styles.pressed]}
             >
-              <Feather
-                name="edit-2"
+              <AppIcon
+                name="pencil"
                 size={13}
                 color={theme.accentBlue}
                 style={styles.editIcon}
@@ -329,12 +309,12 @@ function SummaryCard({ transaction, onPaidToEditPress }: SummaryCardProps) {
                 { backgroundColor: theme.avatarBackground },
               ]}
             >
-              <Ionicons name="person" size={12} color={theme.text} />
+              <AppIcon name="user-round" size={12} color={theme.text} />
             </View>
-            <ThemedText style={styles.gridValue}>{transaction.merchant}</ThemedText>
+            <ThemedText style={styles.gridValue} numberOfLines={1}>{transaction.merchant}</ThemedText>
           </View>
         </View>
-        <Feather name="chevron-right" size={20} color={theme.textMuted} />
+        <AppIcon name="chevron-right" size={20} color={theme.textMuted} />
       </View>
     </ThemedView>
   );
@@ -350,6 +330,80 @@ interface NotesSectionProps {
   onAddReceipt?: () => void;
 }
 
+interface DetailOptionsCardProps {
+  accountPeriod: string;
+  onAccountInPress?: () => void;
+  onMoreDetailsPress?: () => void;
+  onAddToGroupPress?: () => void;
+}
+
+function DetailOptionsCard({
+  accountPeriod,
+  onAccountInPress,
+  onMoreDetailsPress,
+  onAddToGroupPress,
+}: DetailOptionsCardProps) {
+  const theme = useTheme();
+
+  return (
+    <ThemedView
+      type="backgroundElement"
+      style={[styles.optionsCard, { borderColor: theme.border }]}
+    >
+      <OptionRow
+        icon="grid-2x2"
+        label="Account in"
+        value={accountPeriod}
+        onPress={onAccountInPress}
+      />
+      <View style={[styles.optionDivider, { backgroundColor: theme.border }]} />
+      <OptionRow
+        icon="info"
+        label="More Details"
+        onPress={onMoreDetailsPress}
+      />
+      <View style={[styles.optionDivider, { backgroundColor: theme.border }]} />
+      <OptionRow
+        icon="plus"
+        label="Add transaction to group"
+        onPress={onAddToGroupPress}
+      />
+    </ThemedView>
+  );
+}
+
+interface OptionRowProps {
+  icon: AppIconName;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+}
+
+function OptionRow({ icon, label, value, onPress }: OptionRowProps) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.optionRow, pressed && styles.pressed]}
+    >
+      <View style={styles.rowLeft}>
+        <AppIcon name={icon} size={22} color={theme.textMuted} />
+        <ThemedText style={styles.rowLabel}>{label}</ThemedText>
+      </View>
+      <View style={styles.rowRight}>
+        {value ? (
+          <ThemedText type="small" themeColor="textMuted">
+            {value}
+          </ThemedText>
+        ) : null}
+        <AppIcon name="chevron-right" size={20} color={theme.textMuted} />
+      </View>
+    </Pressable>
+  );
+}
+
 function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) {
   const theme = useTheme();
 
@@ -361,11 +415,7 @@ function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) 
       {/* Header row */}
       <View style={styles.notesHeader}>
         <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="calendar-blank-outline"
-            size={16}
-            color={theme.textMuted}
-          />
+          <AppIcon name="calendar" size={16} color={theme.textMuted} />
           <ThemedText type="small" themeColor="textMuted" style={styles.notesLabel}>
             NOTES
           </ThemedText>
@@ -377,11 +427,7 @@ function NotesSection({ value, onChangeText, onAddReceipt }: NotesSectionProps) 
           style={({ pressed }) => [pressed && styles.pressed]}
         >
           <View style={styles.rowLeft}>
-            <MaterialCommunityIcons
-              name="receipt"
-              size={14}
-              color={theme.accentBlue}
-            />
+            <AppIcon name="file-text" size={14} color={theme.accentBlue} />
             <ThemedText type="small" style={styles.addReceiptText}>
               ADD RECEIPT
             </ThemedText>
@@ -426,11 +472,7 @@ function CashFlowToggle({ isExcluded, isSelfTransfer, onToggle }: CashFlowToggle
     >
       <View style={styles.cashFlowRow}>
         <View style={styles.rowLeft}>
-          <MaterialCommunityIcons
-            name="bell-off-outline"
-            size={22}
-            color={theme.textMuted}
-          />
+          <AppIcon name="bell-off" size={22} color={theme.textMuted} />
           <ThemedText style={styles.cashFlowLabel}>Exclude from Cash Flow</ThemedText>
         </View>
         <Switch
@@ -452,22 +494,35 @@ function CashFlowToggle({ isExcluded, isSelfTransfer, onToggle }: CashFlowToggle
 // Helpers
 // ─────────────────────────────────────────────
 
-function formatAmount(amount: number, type: Transaction['type']): string {
+interface AmountParts {
+  sign: string;
+  currencySymbol: string;
+  integerPart: string;
+  decimalPart: string;
+}
+
+function formatAmountParts(amount: number, type: Transaction['type']): AmountParts {
   const sign = type === 'debit' ? '- ' : '+ ';
   const abs = Math.abs(amount);
+  const fixed = abs.toFixed(2);
+  const [integer, decimal] = fixed.split('.');
 
-  try {
-    const formatted = new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-    }).format(abs);
+  const integerFormatted = new Intl.NumberFormat('en-IN').format(Number(integer));
 
-    return `${sign}${formatted}`;
-  } catch {
-    return `${sign}₹${abs.toFixed(2)}`;
-  }
+  return {
+    sign,
+    currencySymbol: '₹',
+    integerPart: integerFormatted,
+    decimalPart: decimal === '00' ? '' : decimal,
+  };
+}
+
+function maskAccountId(accountId: string): string {
+  if (!accountId) return accountId;
+  const clean = accountId.replace(/\s/g, '');
+  if (clean.length <= 4) return `***${clean}`;
+  const last4 = clean.slice(-4);
+  return `***${last4}`;
 }
 
 // ─────────────────────────────────────────────
@@ -476,7 +531,7 @@ function formatAmount(amount: number, type: Transaction['type']): string {
 
 const styles = StyleSheet.create({
   root: {
-    gap: Spacing.two,
+    gap: Spacing.three,
   },
 
   // Summary card
@@ -492,29 +547,92 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginBottom: Spacing.two,
   },
-  summaryAmount: {
-    fontSize: 40,
-    fontWeight: '700',
-    letterSpacing: -1,
+
+  // Large amount display
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     marginBottom: Spacing.two,
+  },
+  amountSign: {
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 46,
+    marginRight: 2,
+    opacity: 0.7,
+  },
+  amountCurrency: {
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 46,
+    marginRight: 1,
+  },
+  amountInteger: {
+    fontSize: 36,
+    fontWeight: '800',
+    lineHeight: 42,
+    letterSpacing: -1,
+  },
+  amountDecimal: {
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 34,
+    letterSpacing: -0.5,
+    marginLeft: 1,
+  },
+
+  tagsSection: {
+    gap: Spacing.two,
+    alignItems: 'center',
+  },
+  tagChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  singleTagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.one,
+    minHeight: 36,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: '85%',
+  },
+  singleTagChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  singleTagRemove: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.two,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.four,
   },
   tagIcon: {
     marginRight: 5,
   },
   tagText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   gridDivider: {
     alignSelf: 'stretch',
@@ -526,10 +644,11 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     justifyContent: 'space-between',
     marginBottom: Spacing.three,
+    gap: Spacing.three,
   },
   gridCell: {
     flex: 1,
-    gap: 6,
+    gap: 8,
   },
   gridCellRight: {
     alignItems: 'flex-end',
@@ -537,7 +656,7 @@ const styles = StyleSheet.create({
   gridLabel: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     textTransform: 'uppercase',
   },
   gridValueRow: {
@@ -545,16 +664,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
+  gridVerticalDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+  },
   bankIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   gridValue: {
     fontSize: 16,
     fontWeight: '600',
+    flexShrink: 1,
   },
   paidToRow: {
     flexDirection: 'row',
@@ -566,12 +690,29 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   avatarCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 4,
+  },
+
+  optionsCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 18,
+    paddingHorizontal: Spacing.three,
+  },
+  optionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: Spacing.three,
   },
 
   // Shared row style
@@ -579,7 +720,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 18,
+    paddingVertical: 20,
     paddingHorizontal: Spacing.three,
     borderRadius: 20,
     borderWidth: 1,
@@ -639,7 +780,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   notesInput: {
-    minHeight: 56,
+    minHeight: 60,
     textAlignVertical: 'top',
     fontSize: 15,
     lineHeight: 22,

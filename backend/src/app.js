@@ -10,13 +10,17 @@ const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
+const { startLocalStatementJobScheduler } = require('./services/localStatementJobScheduler');
 
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const bankRoutes = require('./routes/bankRoutes');
-const tagRoutes = require('./routes/tagRoutes');
+const homeRoutes = require('./routes/homeRoutes');
+const tagCategoryRoutes = require('./routes/tagCategoryRoutes');
 const storageRoutes = require('./routes/storageRoutes');
+const statementJobRoutes = require('./routes/statementJobRoutes');
+const cronRoutes = require('./routes/cronRoutes');
 
 const app = express();
 
@@ -49,8 +53,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/banks', bankRoutes);
-app.use('/api/tags', tagRoutes);
+app.use('/api/home', homeRoutes);
+app.use('/api/tag-categories', tagCategoryRoutes);
 app.use('/api/storage', storageRoutes);
+app.use('/api/jobs', statementJobRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -62,25 +69,32 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-app.listen(config.port, () => {
-  const interfaces = os.networkInterfaces();
-  const hosts = [];
+// Only listen when run directly (e.g. node src/app.js); skip when required by Vercel serverless
+if (require.main === module) {
+  app.listen(config.port, () => {
+    const interfaces = os.networkInterfaces();
+    const hosts = [];
 
-  Object.values(interfaces).forEach((nets) => {
-    if (!nets) return;
-    nets.forEach((net) => {
-      if (net.family === 'IPv4' && !net.internal) {
-        hosts.push(`http://${net.address}:${config.port}`);
-      }
+    Object.values(interfaces).forEach((nets) => {
+      if (!nets) return;
+      nets.forEach((net) => {
+        if (net.family === 'IPv4' && !net.internal) {
+          hosts.push(`http://${net.address}:${config.port}`);
+        }
+      });
     });
-  });
 
-  console.log(`Server running on port ${config.port} [${config.nodeEnv}]`);
-  if (hosts.length > 0) {
-    console.log(`Accessible at: ${hosts.join(', ')}`);
-  } else {
-    console.log('Accessible at: (no external IPv4 address detected)');
-  }
-});
+    console.log(`Server running on port ${config.port} [${config.nodeEnv}]`);
+    if (hosts.length > 0) {
+      console.log(`Accessible at: ${hosts.join(', ')}`);
+    } else {
+      console.log('Accessible at: (no external IPv4 address detected)');
+    }
+
+    if (config.nodeEnv !== 'production') {
+      startLocalStatementJobScheduler();
+    }
+  });
+}
 
 module.exports = app;

@@ -1,16 +1,21 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider } from '@react-navigation/native';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { onAuthStateChanged } from 'firebase/auth';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { useColorScheme } from 'react-native';
-import { Provider, useDispatch } from 'react-redux';
+import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Provider as ReduxProvider, useDispatch } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { LoginScreen } from '@/components/login-screen';
+import { StatementProcessingScreen } from '@/components/statement-processing-screen';
 import { UploadStatementScreen } from '@/components/upload-statement-screen';
+import { Colors, NavigationThemes, PaperThemes } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getFirebaseAuth } from '@/lib/firebase';
 import { persistor, store } from '@/store';
 import { useAppSelector } from '@/store/hooks';
@@ -47,34 +52,36 @@ function AppContent() {
   const shouldUploadStatement = useAppSelector(
     (state) => state.user.shouldUploadStatement,
   );
-  const colorScheme = useColorScheme();
+  const activeJobId = useAppSelector(
+    (state) => state.statementJob.activeJobId,
+  );
 
   if (!isLoggedIn) {
-    return (
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <LoginScreen />
-      </ThemeProvider>
-    );
+    return <LoginScreen />;
+  }
+
+  if (activeJobId) {
+    return <StatementProcessingScreen />;
   }
 
   if (shouldUploadStatement) {
-    return (
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <UploadStatementScreen />
-      </ThemeProvider>
-    );
+    return <UploadStatementScreen />;
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <>
       <AnimatedSplashOverlay />
       <AppTabs />
-    </ThemeProvider>
+    </>
   );
 }
 
 export default function TabLayout() {
   const [appReady, setAppReady] = useState(false);
+  const colorScheme = useColorScheme();
+  const appTheme = Colors[colorScheme];
+  const navigationTheme = NavigationThemes[colorScheme];
+  const paperTheme = PaperThemes[colorScheme];
 
   useEffect(() => {
     async function prepare() {
@@ -93,13 +100,22 @@ export default function TabLayout() {
   if (!appReady) return null;
 
   return (
-    <Provider store={store}>
+    <ReduxProvider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <View style={{ flex: 1, backgroundColor: '#000000' }} onLayout={onLayoutRootView}>
-          <FirebaseAuthSync />
-          <AppContent />
-        </View>
+        <SafeAreaProvider>
+          <PaperProvider theme={paperTheme}>
+            <ThemeProvider value={navigationTheme}>
+              <View
+                style={{ flex: 1, backgroundColor: appTheme.background }}
+                onLayout={onLayoutRootView}>
+                <StatusBar style="light" />
+                <FirebaseAuthSync />
+                <AppContent />
+              </View>
+            </ThemeProvider>
+          </PaperProvider>
+        </SafeAreaProvider>
       </PersistGate>
-    </Provider>
+    </ReduxProvider>
   );
 }

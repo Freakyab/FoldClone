@@ -26,16 +26,39 @@ const transactionSchema = new mongoose.Schema(
       enum: TRANSACTION_TYPES,
       required: [true, 'Transaction type is required'],
     },
-    tags: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Tag',
-      },
-    ],
+    category: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    status: {
+      type: String,
+      enum: TRANSACTION_STATUS,
+      default: 'completed',
+    },
+    paymentMode: {
+      type: String,
+      enum: PAYMENT_MODES,
+      default: 'other',
+    },
+    referenceId: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    tagKeys: {
+      type: [String],
+      default: [],
+      trim: true,
+    },
     notes: {
       type: String,
       trim: true,
       maxlength: [1000, 'Note cannot exceed 1000 characters'],
+    },
+    otherDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
     transactionDate: {
       type: Date,
@@ -63,5 +86,9 @@ const transactionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+transactionSchema.index({ userId: 1, transactionDate: -1 });
+transactionSchema.index({ userId: 1, bankId: 1, transactionDate: -1 });
+transactionSchema.index({ userId: 1, type: 1, transactionDate: -1 });
 
 module.exports = mongoose.model("Transaction", transactionSchema);

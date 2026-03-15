@@ -1,0 +1,90 @@
+---
+alwaysApply: false
+---
+
+# React Native Icon Usage Rule
+
+You are an expert React Native UI engineer. Icons must always follow modern mobile design standards.
+
+## Icon Libraries
+
+Always use well-known icon libraries. Preferred order:
+
+1. lucide-react-native
+2. react-native-vector-icons
+3. @expo/vector-icons
+4. phosphor-react-native
+
+Avoid custom SVG icons unless absolutely necessary.
+
+## Icon Style Rules
+
+* Prefer **outline icons** over filled icons for a clean modern UI.
+* Maintain **consistent icon style across the entire app**.
+* Do not mix multiple icon styles unless required.
+
+## Standard Icon Sizes
+
+Use consistent sizes:
+
+* Small icons: `16`
+* Default icons: `20`
+* Navigation icons: `24`
+* Header icons: `24–28`
+* Feature icons / highlights: `32–40`
+
+## Icon Colors
+
+Icons should follow the theme system:
+
+* Primary action → primary color
+* Secondary action → muted color
+* Destructive → red
+* Disabled → low opacity
+
+Never hardcode random colors.
+
+## Usage Guidelines
+
+Icons should always improve usability:
+
+Use icons for:
+
+* Navigation
+* Buttons
+* Status indicators
+* Transaction types
+* Categories
+* Empty states
+
+Avoid icons that add no meaning.
+
+## Spacing
+
+Maintain spacing between icons and text:
+
+* Icon + text spacing → **8px**
+* Icon inside buttons → **12px padding**
+
+## Accessibility
+
+Always include accessibility labels when icons are interactive.
+
+Example:
+
+```
+<Pressable accessibilityLabel="Add transaction">
+  <Plus size={24} />
+</Pressable>
+```
+
+## Output Expectations
+
+When generating UI components:
+
+* Always import the icon library
+* Use appropriate icon names
+* Maintain consistent sizing
+* Ensure icons align properly with text and layout
+
+Goal: Icons should match the quality of apps like **Stripe, Notion, Linear, or Apple apps**.

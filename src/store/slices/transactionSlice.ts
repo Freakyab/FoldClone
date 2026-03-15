@@ -7,12 +7,6 @@ import { logoutUser } from './userSlice';
 /** Backend Transaction model shape (from Transaction.js) */
 export type TransactionType = 'credit' | 'debit' | 'transfer';
 
-export interface TransactionTag {
-  _id: string;
-  name?: string;
-  color?: string;
-}
-
 export interface BankRef {
   _id: string;
   name?: string;
@@ -25,7 +19,7 @@ export interface TransactionRecord {
   bankId: string | null;
   amount: number;
   type: TransactionType;
-  tags: TransactionTag[];
+  tagKeys: string[];
   notes?: string;
   transactionDate: string;
   currency: string;
@@ -110,6 +104,46 @@ export const fetchTransactions = createAsyncThunk<
   },
 );
 
+export const updateTransactionTags = createAsyncThunk<
+  { id: string; tagKeys: string[] },
+  { id: string; tagKeys: string[] },
+  { state: RootState; rejectValue: string }
+>(
+  'transactions/updateTransactionTags',
+  async ({ id, tagKeys }, { getState, rejectWithValue }) => {
+    const token = getState().user.token;
+    if (!token) {
+      return rejectWithValue('User not authenticated');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/transactions/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ tagKeys }),
+      });
+
+      const json = (await response.json()) as {
+        success: boolean;
+        data?: TransactionRecord;
+        message?: string;
+      };
+
+      if (!response.ok || !json.success) {
+        return rejectWithValue(json.message ?? 'Failed to update transaction tags');
+      }
+
+      return { id, tagKeys };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update transaction tags';
+      return rejectWithValue(message);
+    }
+  },
+);
+
 const transactionSlice = createSlice({
   name: 'transactions',
   initialState,
@@ -122,6 +156,15 @@ const transactionSlice = createSlice({
     },
     setTransactionsError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+    },
+    updateTransactionTagKeysLocally: (
+      state,
+      action: PayloadAction<{ id: string; tagKeys: string[] }>,
+    ) => {
+      const idx = state.items.findIndex((i) => i._id === action.payload.id);
+      if (idx !== -1) {
+        state.items[idx].tagKeys = action.payload.tagKeys;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -140,6 +183,12 @@ const transactionSlice = createSlice({
         state.status = 'failed';
         state.error = action.payload ?? 'Failed to fetch transactions';
       })
+      .addCase(updateTransactionTags.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((i) => i._id === action.payload.id);
+        if (idx !== -1) {
+          state.items[idx].tagKeys = action.payload.tagKeys;
+        }
+      })
       .addCase(logoutUser, () => initialState);
   },
 });
@@ -153,18 +202,12 @@ export function mapTransactionRecordToUI(rec: TransactionRecord): {
   merchant: string;
   accountId: string;
   category?: string;
-  tag?: 'SELF_TRANSFER' | 'RETURN' | 'PAYMENT';
+  tags: string[];
   notes?: string;
   receiptUrl?: string;
   excludedFromCashFlow: boolean;
   createdAt: Date;
 } {
-  const tagName = rec.tags?.[0]?.name?.toUpperCase();
-  const tag =
-    tagName === 'SELF_TRANSFER' || tagName === 'RETURN' || tagName === 'PAYMENT'
-      ? tagName
-      : undefined;
-
   return {
     id: rec._id,
     amount: rec.amount,
@@ -175,9 +218,13 @@ export function mapTransactionRecordToUI(rec: TransactionRecord): {
     notes: rec.notes,
     excludedFromCashFlow: rec.excludedFromCashFlow,
     createdAt: new Date(rec.createdAt),
-    tag,
+    tags: Array.isArray(rec.tagKeys) ? rec.tagKeys : [],
   };
 }
 
-export const { clearTransactions, setTransactionsError } = transactionSlice.actions;
+export const {
+  clearTransactions,
+  setTransactionsError,
+  updateTransactionTagKeysLocally,
+} = transactionSlice.actions;
 export default transactionSlice.reducer;

@@ -1,21 +1,18 @@
 const mongoose = require('mongoose');
 const { StatusCodes } = require('http-status-codes');
 const Bank = require('../models/Bank');
-const Transaction = require('../models/Transaction');
-const PDFExtract = require('pdf.js-extract').PDFExtract;
-const {
-  extractBankStatementFromPdf,
-  extractBankStatementFromText,
-} = require('../services/geminiService');
-const { getFileBuffer, deleteObject } = require('../services/s3Service');
+const StatementJob = require('../models/StatementJob');
+const StatementPassword = require('../models/StatementPassword');
+const { decrypt: decryptStatementPassword } = require('../utils/statementPasswordCrypto');
 
 const createBank = async (req, res, next) => {
   try {
     const { isPrimary } = req.body;
+    const ownedBankFilter = Bank.buildOwnedBankFilter(req.user.id);
 
     if (isPrimary) {
       await Bank.updateMany(
-        { userId: req.user.id, isDeleted: false },
+        ownedBankFilter,
         { $set: { isPrimary: false } }
       );
     }
@@ -37,10 +34,8 @@ const createBank = async (req, res, next) => {
 
 const getBanks = async (req, res, next) => {
   try {
-    const banks = await Bank.find({
-      userId: req.user.id,
-      isDeleted: false,
-    })
+    const linkedBankFilter = Bank.buildLinkedBankFilter(req.user.id);
+    const banks = await Bank.find(linkedBankFilter)
       .sort({ isPrimary: -1, createdAt: -1 })
       .lean();
 
@@ -62,6 +57,7 @@ const getBanks = async (req, res, next) => {
 const getBankById = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const ownedBankFilter = Bank.buildOwnedBankFilter(req.user.id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -72,9 +68,8 @@ const getBankById = async (req, res, next) => {
     }
 
     const bank = await Bank.findOne({
+      ...ownedBankFilter,
       _id: id,
-      userId: req.user.id,
-      isDeleted: false,
     }).lean();
 
     if (!bank) {
@@ -97,6 +92,7 @@ const getBankById = async (req, res, next) => {
 const updateBank = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const ownedBankFilter = Bank.buildOwnedBankFilter(req.user.id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -119,13 +115,13 @@ const updateBank = async (req, res, next) => {
 
     if (updates.isPrimary === true) {
       await Bank.updateMany(
-        { userId: req.user.id, _id: { $ne: id }, isDeleted: false },
+        { ...ownedBankFilter, _id: { $ne: id } },
         { $set: { isPrimary: false } }
       );
     }
 
     const bank = await Bank.findOneAndUpdate(
-      { _id: id, userId: req.user.id, isDeleted: false },
+      { ...ownedBankFilter, _id: id },
       { $set: updates },
       { new: true, runValidators: true }
     ).lean();
@@ -151,6 +147,7 @@ const updateBank = async (req, res, next) => {
 const deleteBank = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const ownedBankFilter = Bank.buildOwnedBankFilter(req.user.id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -161,7 +158,7 @@ const deleteBank = async (req, res, next) => {
     }
 
     const bank = await Bank.findOneAndUpdate(
-      { _id: id, userId: req.user.id, isDeleted: false },
+      { ...ownedBankFilter, _id: id },
       { $set: { isDeleted: true, deletedAt: new Date(), isActive: false } },
       { new: true }
     );
@@ -186,6 +183,7 @@ const deleteBank = async (req, res, next) => {
 const setPrimaryBank = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const ownedBankFilter = Bank.buildOwnedBankFilter(req.user.id);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -196,12 +194,12 @@ const setPrimaryBank = async (req, res, next) => {
     }
 
     await Bank.updateMany(
-      { userId: req.user.id, isDeleted: false },
+      ownedBankFilter,
       { $set: { isPrimary: false } }
     );
 
     const bank = await Bank.findOneAndUpdate(
-      { _id: id, userId: req.user.id, isDeleted: false },
+      { ...ownedBankFilter, _id: id },
       { $set: { isPrimary: true } },
       { new: true }
     ).lean();
@@ -227,7 +225,6 @@ const setPrimaryBank = async (req, res, next) => {
 const uploadBankStatement = async (req, res, next) => {
   try {
     const { pdfBase64, password } = req.body;
-    console.log( 'password', password);
     if (!pdfBase64) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -236,97 +233,19 @@ const uploadBankStatement = async (req, res, next) => {
       });
     }
 
-    const buffer = Buffer.from(pdfBase64, 'base64');
-
-    let parsed;
-
-    if (password && typeof password === 'string' && password.trim().length > 0) {
-      const pdfExtract = new PDFExtract();
-
-      const text = await new Promise((resolve, reject) => {
-        pdfExtract.extractBuffer(
-          buffer,
-          { password: password.trim() },
-          (err, data) => {
-            if (err) {
-              return reject(err);
-            }
-
-            const allText = data.pages
-              .map((page) =>
-                page.content
-                  .map((item) => item.str || '')
-                  .join(' ')
-              )
-              .join('\n\n');
-
-            resolve(allText);
-          },
-        );
-      });
-
-      parsed = await extractBankStatementFromText(text);
-      console.log(parsed);
-      console.log(text);
-    } else {
-      parsed = await extractBankStatementFromPdf(buffer);
-    }
-
-    const {
-      account_number: accountNumber,
-      account_name: accountName,
-      bank_name: bankName,
-      branch,
-      currency = 'INR',
-      closing_balance: closingBalance = 0,
-      transactions = [],
-    } = parsed || {};
-
-    const bank = await Bank.create({
+    const pdfSizeBytes = Buffer.byteLength(Buffer.from(pdfBase64, 'base64'));
+    const job = await StatementJob.create({
       userId: req.user.id,
-      name: bankName || 'Primary Account',
-      accountHolderName: accountName || 'Account Holder',
-      accountNumber: accountNumber || null,
-      branch: branch || null,
-      balance: typeof closingBalance === 'number' ? closingBalance : 0,
-      currency: currency || 'INR',
+      type: 'base64',
+      payload: { pdfBase64, password: password || null },
+      status: 'pending',
+      pdfSizeBytes,
     });
 
-    const txDocs = Array.isArray(transactions)
-      ? transactions
-          .filter((tx) => tx)
-          .map((tx) => {
-            const debit = Number(tx.debit) || 0;
-            const credit = Number(tx.credit) || 0;
-            const amount = debit > 0 ? debit : credit;
-            const type = debit > 0 ? 'debit' : 'credit';
-
-            return {
-              userId: req.user.id,
-              bankId: bank._id,
-              amount,
-              type,
-              transactionDate: tx.date ? new Date(tx.date) : new Date(),
-              currency: currency || 'INR',
-              accountIn: accountName || bankName || 'Account',
-              notes: tx.description || '',
-            };
-          })
-          .filter((doc) => doc.amount > 0)
-      : [];
-
-    let createdTransactions = [];
-    if (txDocs.length > 0) {
-      createdTransactions = await Transaction.insertMany(txDocs);
-    }
-
-    res.status(StatusCodes.CREATED).json({
+    res.status(StatusCodes.ACCEPTED).json({
       success: true,
-      message: 'Bank statement processed successfully',
-      data: {
-        bank,
-        transactionsCreated: createdTransactions.length,
-      },
+      message: 'Statement upload queued. Poll GET /api/jobs/:jobId for status.',
+      data: { jobId: job._id.toString() },
     });
   } catch (error) {
     next(error);
@@ -336,7 +255,6 @@ const uploadBankStatement = async (req, res, next) => {
 const uploadBankStatementFromS3 = async (req, res, next) => {
   try {
     const { key, password } = req.body;
-    console.log( key, 'password', password);
     if (!key) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -345,118 +263,78 @@ const uploadBankStatementFromS3 = async (req, res, next) => {
       });
     }
 
-    if (!password) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Missing password in request body',
-        errorCode: 'NO_PASSWORD',
-      });
-    }
-
-    const buffer = await getFileBuffer(key);
-    console.log( 'buffer', buffer);
-    let parsed;
-
-    if (password && typeof password === 'string' && password.trim().length > 0) {
-      const pdfExtract = new PDFExtract();
-      console.log( 'pdfExtract', pdfExtract);
-      const text = await new Promise((resolve, reject) => {
-        pdfExtract.extractBuffer(
-          buffer,
-          { password: password.trim() },
-          (err, data) => {
-            if (err) {
-              return reject(err);
-            }
-
-            const allText = data.pages
-              .map((page) =>
-                page.content
-                  .map((item) => item.str || '')
-                  .join(' ')
-              )
-              .join('\n\n');
-
-            resolve(allText);
-          },
-        );
-      });
-
-      parsed = await extractBankStatementFromText(text);
-    } else {
-      parsed = await extractBankStatementFromPdf(buffer);
-    }
-
-    const {
-      account_number: accountNumber,
-      account_name: accountName,
-      bank_name: bankName,
-      branch,
-      currency = 'INR',
-      closing_balance: closingBalance = 0,
-      transactions = [],
-    } = parsed || {};
-
-    console.log( 'parsed', parsed);
-    console.log( 'accountNumber', accountNumber);
-    console.log( 'accountName', accountName);
-    console.log( 'bankName', bankName);
-    console.log( 'branch', branch);
-    console.log( 'currency', currency);
-    console.log( 'closingBalance', closingBalance);
-    console.log( 'transactions', transactions);
-    const bank = await Bank.create({
+    const job = await StatementJob.create({
       userId: req.user.id,
-      name: bankName || 'Primary Account',
-      accountHolderName: accountName || 'Account Holder',
-      accountNumber: accountNumber || null,
-      branch: branch || null,
-      balance: typeof closingBalance === 'number' ? closingBalance : 0,
-      currency: currency || 'INR',
+      type: 's3',
+      payload: { key, password: password || null },
+      status: 'pending',
     });
 
-    const txDocs = Array.isArray(transactions)
-      ? transactions
-          .filter((tx) => tx)
-          .map((tx) => {
-            const debit = Number(tx.debit) || 0;
-            const credit = Number(tx.credit) || 0;
-            const amount = debit > 0 ? debit : credit;
-            const type = debit > 0 ? 'debit' : 'credit';
-
-            return {
-              userId: req.user.id,
-              bankId: bank._id,
-              amount,
-              type,
-              transactionDate: tx.date ? new Date(tx.date) : new Date(),
-              currency: currency || 'INR',
-              accountIn: accountName || bankName || 'Account',
-              notes: tx.description || '',
-            };
-          })
-          .filter((doc) => doc.amount > 0)
-      : [];
-
-    let createdTransactions = [];
-    if (txDocs.length > 0) {
-      createdTransactions = await Transaction.insertMany(txDocs);
-    }
-
-    try {
-      await deleteObject(key);
-    } catch (cleanupError) {
-      // eslint-disable-next-line no-console
-      console.warn('Failed to delete S3 object', cleanupError);
-    }
-
-    res.status(StatusCodes.CREATED).json({
+    res.status(StatusCodes.ACCEPTED).json({
       success: true,
-      message: 'Bank statement processed successfully',
-      data: {
-        bank,
-        transactionsCreated: createdTransactions.length,
-      },
+      message: 'Statement upload queued. Poll GET /api/jobs/:jobId for status.',
+      data: { jobId: job._id.toString() },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getSavedStatementPasswords = async (req, res, next) => {
+  try {
+    const rows = await StatementPassword.find({ userId: req.user.id })
+      .sort({ lastUsedAt: -1 })
+      .limit(20)
+      .select('bankName accountNumber password lastUsedAt _id')
+      .lean();
+
+    const data = [];
+    for (const row of rows) {
+      const password = decryptStatementPassword(row.password);
+      if (password == null) continue;
+      data.push({
+        _id: row._id,
+        bankName: row.bankName,
+        accountNumber: row.accountNumber,
+        password,
+        lastUsedAt: row.lastUsedAt,
+      });
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteSavedStatementPassword = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid saved password id',
+      });
+    }
+
+    const deleted = await StatementPassword.findOneAndDelete({
+      _id: id,
+      userId: req.user.id,
+    });
+
+    if (!deleted) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Saved password not found',
+      });
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Saved password removed',
     });
   } catch (error) {
     next(error);
@@ -472,4 +350,6 @@ module.exports = {
   setPrimaryBank,
   uploadBankStatement,
   uploadBankStatementFromS3,
+  getSavedStatementPasswords,
+  deleteSavedStatementPassword,
 };

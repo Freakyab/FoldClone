@@ -11,17 +11,19 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  TAG_CATEGORIES,
+  getCategoriesForTransactionType,
   MOST_USED_TAG_IDS,
+  MOST_USED_TAG_IDS_CREDIT,
   findTagSubItem,
 } from './tag-data';
 import type { TagCategory, TagSubItem } from './tag-data';
+import type { TransactionType } from './types';
 
 // ─────────────────────────────────────────────
 // Types
@@ -32,6 +34,8 @@ interface TagSelectorProps {
   currentTagId?: string;
   onSelect: (tagId: string, label: string) => void;
   onClose: () => void;
+  /** When provided, only categories for this transaction type (credit/debit) are shown. */
+  transactionType?: TransactionType;
   transactionAmount?: number;
   transactionMerchant?: string;
   transactionDate?: Date;
@@ -46,6 +50,7 @@ export function TagSelector({
   currentTagId,
   onSelect,
   onClose,
+  transactionType = 'debit',
   transactionAmount,
   transactionMerchant,
   transactionDate,
@@ -55,15 +60,21 @@ export function TagSelector({
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<TextInput>(null);
 
+  const categoriesForType = useMemo(
+    () => getCategoriesForTransactionType(transactionType),
+    [transactionType]
+  );
+
   const mostUsedItems = useMemo<TagSubItem[]>(() => {
-    return MOST_USED_TAG_IDS.map(id => findTagSubItem(id)).filter(Boolean) as TagSubItem[];
-  }, []);
+    const ids = transactionType === 'credit' ? MOST_USED_TAG_IDS_CREDIT : MOST_USED_TAG_IDS;
+    return ids.map(id => findTagSubItem(id)).filter(Boolean) as TagSubItem[];
+  }, [transactionType]);
 
   const filteredCategories = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return TAG_CATEGORIES;
+    if (!q) return categoriesForType;
 
-    return TAG_CATEGORIES.map(cat => {
+    return categoriesForType.map(cat => {
       const catMatches = cat.label.toLowerCase().includes(q);
       const matchingSubItems = cat.subItems.filter(s =>
         s.label.toLowerCase().includes(q)
@@ -71,7 +82,7 @@ export function TagSelector({
       if (!catMatches && matchingSubItems.length === 0) return null;
       return { ...cat, subItems: catMatches ? cat.subItems : matchingSubItems };
     }).filter(Boolean) as TagCategory[];
-  }, [searchQuery]);
+  }, [categoriesForType, searchQuery]);
 
   const handleSubItemPress = useCallback((item: TagSubItem) => {
     onSelect(item.id, item.label);
@@ -141,7 +152,7 @@ export function TagSelector({
               hitSlop={12}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
-              <Feather name="x" size={20} color={theme.text} />
+              <AppIcon name="x" size={20} color={theme.text} />
             </Pressable>
 
             <ThemedText style={styles.headerTitle}>Tag transaction</ThemedText>
@@ -150,7 +161,7 @@ export function TagSelector({
               hitSlop={12}
               style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
-              <Feather name="check" size={20} color={theme.accentGreen} />
+              <AppIcon name="check" size={20} color={theme.accentGreen} />
             </Pressable>
           </View>
 
@@ -164,7 +175,7 @@ export function TagSelector({
             >
               <View style={styles.previewRow}>
                 <View style={styles.previewMerchantRow}>
-                  <Feather name="edit-3" size={13} color={theme.accentBlue} />
+                  <AppIcon name="pencil-line" size={13} color={theme.accentBlue} />
                   <ThemedText style={styles.previewMerchant}>
                     {transactionMerchant ?? 'Transaction'}
                   </ThemedText>
@@ -213,7 +224,7 @@ export function TagSelector({
               { backgroundColor: theme.backgroundElement, borderColor: theme.border },
             ]}
           >
-            <Feather name="search" size={16} color={theme.textMuted} />
+            <AppIcon name="search" size={16} color={theme.textMuted} />
             <TextInput
               ref={searchRef}
               style={[styles.searchInput, { color: theme.text }]}
@@ -226,7 +237,7 @@ export function TagSelector({
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Feather name="x-circle" size={15} color={theme.textMuted} />
+                <AppIcon name="circle-x" size={15} color={theme.textMuted} />
               </Pressable>
             )}
           </View>

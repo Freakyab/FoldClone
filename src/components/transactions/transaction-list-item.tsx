@@ -1,12 +1,13 @@
 import React from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TagBadge } from './tag-badge';
+import { findTagSubItem } from './tag-data';
 import type { Transaction } from './types';
 
 interface TransactionListItemProps {
@@ -14,16 +15,35 @@ interface TransactionListItemProps {
   onPress: (transaction: Transaction) => void;
 }
 
-const TAG_ICON_MAP: Record<NonNullable<Transaction['tag']>, React.ComponentProps<typeof MaterialCommunityIcons>['name']> = {
-  SELF_TRANSFER: 'sync',
-  RETURN: 'refresh',
-  PAYMENT: 'credit-card-outline',
+interface TransactionTagIconProps {
+  size?: number;
+  color?: string;
+}
+
+function createLegacyTagIcon(name: AppIconName) {
+  return function LegacyTagIcon({ size = 11, color = '#FFFFFF' }: TransactionTagIconProps) {
+    return <AppIcon name={name} size={size} color={color} />;
+  };
+}
+
+const LEGACY_TAG_ICON_MAP: Record<string, React.ComponentType<TransactionTagIconProps>> = {
+  SELF_TRANSFER: createLegacyTagIcon('arrow-left-right'),
+  RETURN: createLegacyTagIcon('refresh-ccw'),
+  PAYMENT: createLegacyTagIcon('credit-card'),
 };
+
+function getTagDisplay(tag: string | undefined): { label: string; Icon?: React.ComponentType<TransactionTagIconProps> } | null {
+  if (!tag) return null;
+  const fromData = findTagSubItem(tag);
+  if (fromData) return { label: fromData.label, Icon: fromData.Icon };
+  return { label: tag.replace(/_/g, ' '), Icon: LEGACY_TAG_ICON_MAP[tag] };
+}
 
 export function TransactionListItem({ transaction, onPress }: TransactionListItemProps) {
   const theme = useTheme();
   const dateLabel = formatTimestamp(transaction.date);
-  const tagIcon = transaction.tag ? TAG_ICON_MAP[transaction.tag] : undefined;
+  const tagDisplay = getTagDisplay(transaction.tags?.[0]);
+  const maskedAccount = maskAccountId(transaction.accountId);
 
   return (
     <Pressable
@@ -46,16 +66,15 @@ export function TransactionListItem({ transaction, onPress }: TransactionListIte
           </ThemedText>
         </View>
 
-        {/* ── Row 2: amount (left) + tag / badges (right) ── */}
+        {/* ── Row 2: amount (left) + tag / metadata icons (right) ── */}
         <View style={styles.bodyRow}>
           <AmountLabel amount={transaction.amount} type={transaction.type} />
 
           <View style={styles.rightCluster}>
-            {/* Tag badge or "Add Tag" prompt */}
-            {transaction.tag ? (
+            {tagDisplay ? (
               <TagBadge
-                label={transaction.tag.replace(/_/g, ' ')}
-                icon={tagIcon}
+                label={tagDisplay.label}
+                Icon={tagDisplay.Icon}
               />
             ) : (
               <AddTagBadge />
@@ -63,53 +82,35 @@ export function TransactionListItem({ transaction, onPress }: TransactionListIte
 
             {/* Excluded from cash-flow indicator */}
             {transaction.excludedFromCashFlow && (
-              <MaterialCommunityIcons
-                name="bell-off-outline"
-                size={14}
-                color={theme.textMuted}
-              />
+              <AppIcon name="bell-off" size={14} color={theme.textMuted} />
             )}
 
-            {/* Bank source dot */}
-            <View style={[styles.bankDot, { backgroundColor: '#E11D48' }]}>
-              <MaterialCommunityIcons name="bank" size={9} color="#fff" />
-            </View>
+            {transaction.notes ? (
+              <AppIcon name="sticky-note" size={14} color={theme.accentRed} />
+            ) : null}
 
-            {/* "…" more details cue */}
-            <MaterialCommunityIcons
-              name="dots-horizontal"
-              size={18}
-              color={theme.textMuted}
-            />
+            <AppIcon name="info" size={16} color={theme.textMuted} />
           </View>
         </View>
 
-        {/* ── Row 3: account ID + notes (truncated) ── */}
+        {/* ── Row 3: secondary bank/reference information ── */}
         <View style={styles.footerRow}>
           <View style={styles.accountRow}>
-            <MaterialCommunityIcons
-              name="credit-card-outline"
-              size={11}
-              color={theme.textMuted}
-            />
+            <AppIcon name="building-2" size={11} color={theme.textMuted} />
             <ThemedText style={styles.accountText} themeColor="textMuted" numberOfLines={1}>
-              {transaction.accountId}
+              {`Bank ref ${maskedAccount}`}
             </ThemedText>
           </View>
 
-          {transaction.notes ? (
+          {transaction.category ? (
             <View style={styles.notesRow}>
-              <MaterialCommunityIcons
-                name="note-text-outline"
-                size={11}
-                color={theme.textMuted}
-              />
+              <AppIcon name="tag" size={11} color={theme.textMuted} />
               <ThemedText
                 style={styles.notesText}
                 themeColor="textMuted"
                 numberOfLines={1}
               >
-                {transaction.notes}
+                {transaction.category}
               </ThemedText>
             </View>
           ) : null}
@@ -132,7 +133,7 @@ function AddTagBadge() {
         { borderColor: theme.border, backgroundColor: 'transparent' },
       ]}
     >
-      <MaterialCommunityIcons name="tag-plus-outline" size={11} color={theme.textMuted} />
+      <AppIcon name="tag" size={11} color={theme.textMuted} />
       <ThemedText style={styles.addTagText} themeColor="textMuted">
         Add Tag
       </ThemedText>
@@ -151,12 +152,10 @@ interface AmountLabelProps {
 
 function AmountLabel({ amount, type }: AmountLabelProps) {
   const theme = useTheme();
-  const isDebit = type === 'debit';
-  const sign = isDebit ? '- ' : '+ ';
-  const color = isDebit ? theme.text : theme.accentGreen;
+  const sign = type === 'debit' ? '- ' : '+ ';
 
   return (
-    <ThemedText style={[styles.amount, { color }]}>
+    <ThemedText style={[styles.amount, { color: theme.text }]}>
       {sign}{formatCurrency(amount)}
     </ThemedText>
   );
@@ -200,6 +199,13 @@ function formatCurrency(value: number): string {
   }
 }
 
+function maskAccountId(accountId: string): string {
+  if (!accountId) return '';
+  const clean = accountId.replace(/\s/g, '');
+  const last4 = clean.slice(-4);
+  return last4 ? `***${last4}` : clean;
+}
+
 // ─────────────────────────────────────────────
 // Styles
 // ─────────────────────────────────────────────
@@ -214,7 +220,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: 16,
-    paddingTop: Spacing.four,
+    paddingTop: Spacing.three,
     paddingBottom: Spacing.three,
     paddingHorizontal: Spacing.three,
     gap: Spacing.two,
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   merchant: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
   },
@@ -246,14 +252,14 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   amount: {
-    fontSize: 19,
-    fontWeight: '700',
-    letterSpacing: -0.4,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.6,
   },
   rightCluster: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     flexShrink: 0,
   },
 
@@ -274,15 +280,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // Bank dot
-  bankDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // Row 3
   footerRow: {
     flexDirection: 'row',
@@ -299,7 +296,7 @@ const styles = StyleSheet.create({
   },
   accountText: {
     fontSize: 11,
-    fontWeight: '400',
+    fontWeight: '500',
   },
   notesRow: {
     flexDirection: 'row',
@@ -310,7 +307,7 @@ const styles = StyleSheet.create({
   },
   notesText: {
     fontSize: 11,
-    fontWeight: '400',
+    fontWeight: '500',
     flexShrink: 1,
   },
 });
