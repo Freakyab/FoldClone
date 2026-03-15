@@ -52,22 +52,31 @@ export default function TransactionsScreen() {
   // Detail page state
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const prevTagsRef = useRef<string[]>([]);
+  const prevTagsRef = useRef<{ id: string; tags: string[] } | null>(null);
 
   const handleTagsChange = useCallback(
     (tagKeys: string[]) => {
       if (!selectedTransaction) return;
-      prevTagsRef.current = selectedTransaction.tags ?? [];
+      const txId = selectedTransaction.id;
+      prevTagsRef.current = { id: txId, tags: selectedTransaction.tags ?? [] };
       setSelectedTransaction((prev) => (prev ? { ...prev, tags: tagKeys } : null));
       return dispatch(
-        updateTransactionTags({ id: selectedTransaction.id, tagKeys }),
+        updateTransactionTags({ id: txId, tagKeys }),
       )
         .unwrap()
-        .then(() => {})
+        .then(() => {
+          prevTagsRef.current = null;
+        })
         .catch(() => {
-          setSelectedTransaction((prev) =>
-            prev ? { ...prev, tags: prevTagsRef.current } : null,
-          );
+          const snapshot = prevTagsRef.current;
+          setSelectedTransaction((prev) => {
+            if (!prev) return null;
+            if (snapshot && snapshot.id === prev.id) {
+              return { ...prev, tags: snapshot.tags };
+            }
+            return prev;
+          });
+          prevTagsRef.current = null;
           throw new Error('Failed to save tags');
         }) as Promise<void>;
     },
@@ -114,7 +123,7 @@ export default function TransactionsScreen() {
       if (filter.transactionType === 'outgoing' && tx.type !== 'debit') return false;
 
       // Tags filter: transaction must have at least one of the selected tag keys
-      if (filter.tags.length > 0 && !tx.tags.some((t) => filter.tags.includes(t))) return false;
+      if (filter.tags.length > 0 && !(tx.tags ?? []).some((t) => filter.tags.includes(t))) return false;
 
       // Date range filter
       if (filter.dateFrom && tx.date < filter.dateFrom) return false;

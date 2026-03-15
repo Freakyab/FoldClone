@@ -263,18 +263,10 @@ const uploadBankStatementFromS3 = async (req, res, next) => {
       });
     }
 
-    if (!password) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Missing password in request body',
-        errorCode: 'NO_PASSWORD',
-      });
-    }
-
     const job = await StatementJob.create({
       userId: req.user.id,
       type: 's3',
-      payload: { key, password },
+      payload: { key, password: password || null },
       status: 'pending',
     });
 
@@ -318,6 +310,37 @@ const getSavedStatementPasswords = async (req, res, next) => {
   }
 };
 
+const deleteSavedStatementPassword = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid saved password id',
+      });
+    }
+
+    const deleted = await StatementPassword.findOneAndDelete({
+      _id: id,
+      userId: req.user.id,
+    });
+
+    if (!deleted) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Saved password not found',
+      });
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Saved password removed',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createBank,
   getBanks,
@@ -328,4 +351,5 @@ module.exports = {
   uploadBankStatement,
   uploadBankStatementFromS3,
   getSavedStatementPasswords,
+  deleteSavedStatementPassword,
 };

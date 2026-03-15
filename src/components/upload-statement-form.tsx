@@ -199,6 +199,27 @@ export function UploadStatementForm({
     }
   }, [dispatch, token, password, onSuccess, completeSetupOnSuccess, isStatementJobActive]);
 
+  const handleDeleteSavedPassword = useCallback(
+    async (id: string) => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/banks/saved-passwords/${id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          setSavedPasswords((prev) => prev.filter((p) => p._id !== id));
+        }
+      } catch {
+        // Keep silent; user can retry
+      }
+    },
+    [token],
+  );
+
   return (
     <View style={styles.content}>
       <ThemedText type="small" themeColor="textMuted">
@@ -234,32 +255,47 @@ export function UploadStatementForm({
           </ThemedText>
           <View style={styles.savedPasswordList}>
             {savedPasswords.map((item) => (
-              <Pressable
-                key={item._id}
-                onPress={() => setPassword(item.password)}
-                style={({ pressed }) => [
-                  styles.savedPasswordItem,
-                  {
-                    borderColor: theme.border,
-                    backgroundColor: theme.backgroundElement,
-                    opacity: pressed ? 0.8 : 1,
-                  },
-                ]}>
-                <View style={styles.savedPasswordItemInner}>
-                  <AppIcon
-                    name="building-2"
-                    size={22}
-                    color={theme.textSecondary}
-                    style={styles.savedPasswordIcon}
-                  />
-                  <View style={styles.savedPasswordTextWrap}>
-                    <ThemedText type="smallBold">{item.bankName}</ThemedText>
-                    <ThemedText type="small" themeColor="textMuted">
-                      {maskAccountNumber(item.accountNumber)}
-                    </ThemedText>
+              <View key={item._id} style={styles.savedPasswordItemRow}>
+                <Pressable
+                  onPress={() => setPassword(item.password)}
+                  style={({ pressed }) => [
+                    styles.savedPasswordItem,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.backgroundElement,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}>
+                  <View style={styles.savedPasswordItemInner}>
+                    <AppIcon
+                      name="building-2"
+                      size={22}
+                      color={theme.textSecondary}
+                      style={styles.savedPasswordIcon}
+                    />
+                    <View style={styles.savedPasswordTextWrap}>
+                      <ThemedText type="smallBold">{item.bankName}</ThemedText>
+                      <ThemedText type="small" themeColor="textMuted">
+                        {maskAccountNumber(item.accountNumber)}
+                      </ThemedText>
+                    </View>
                   </View>
-                </View>
-              </Pressable>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleDeleteSavedPassword(item._id)}
+                  hitSlop={8}
+                  style={({ pressed }) => [
+                    styles.savedPasswordDeleteBtn,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
+                  accessibilityLabel="Remove saved password">
+                  <AppIcon
+                    name="x"
+                    size={20}
+                    color={theme.textMuted}
+                  />
+                </Pressable>
+              </View>
             ))}
           </View>
         </View>
@@ -332,7 +368,13 @@ const styles = StyleSheet.create({
   savedPasswordList: {
     gap: Spacing.one,
   },
+  savedPasswordItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.one,
+  },
   savedPasswordItem: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: Spacing.three,
@@ -348,5 +390,10 @@ const styles = StyleSheet.create({
   savedPasswordTextWrap: {
     flex: 1,
     gap: 2,
+  },
+  savedPasswordDeleteBtn: {
+    padding: Spacing.two,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

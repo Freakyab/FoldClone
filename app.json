@@ -16,7 +16,9 @@
     },
     "plugins": [
       "@react-native-community/datetimepicker",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-image",
+      "expo-router"
     ]
   }
 }

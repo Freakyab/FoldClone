@@ -27,32 +27,21 @@ function endOfDay(date) {
   return d;
 }
 
-async function upsertStatementPassword(userId, parsed, password) {
+async function saveStatementPassword(userId, parsed, password) {
   if (!password || typeof password !== 'string' || password.trim().length === 0) return;
 
   const bankName = parsed?.bank_name?.trim() || 'Unknown Bank';
   const accountNumber = parsed?.account_number ? String(parsed.account_number).trim() || null : null;
   const normalizedPassword = password.trim();
-
-  const query = accountNumber
-    ? { userId, accountNumber }
-    : { userId, bankName, accountNumber: null };
-
   const passwordToStore = encryptStatementPassword(normalizedPassword);
 
-  await StatementPassword.findOneAndUpdate(
-    query,
-    {
-      $set: {
-        bankName,
-        accountNumber,
-        password: passwordToStore,
-        lastUsedAt: new Date(),
-      },
-      $setOnInsert: { userId },
-    },
-    { upsert: true, new: true, runValidators: true }
-  );
+  await StatementPassword.create({
+    userId,
+    bankName,
+    accountNumber: accountNumber || undefined,
+    password: passwordToStore,
+    lastUsedAt: new Date(),
+  });
 }
 
 async function upsertBankFromParsed(userId, parsed) {
@@ -72,21 +61,26 @@ async function upsertBankFromParsed(userId, parsed) {
     currency: currency || 'INR',
   };
 
+  const findFilter = {
+    userId,
+    name: bankName,
+    isDeleted: { $ne: true },
+  };
   if (accountNumber) {
-    const existing = await Bank.findOne({
-      userId,
-      accountNumber,
-      isDeleted: { $ne: true },
-    });
+    findFilter.accountNumber = accountNumber;
+  } else {
+    findFilter.$or = [{ accountNumber: null }, { accountNumber: { $exists: false } }];
+  }
 
-    if (existing) {
-      const updated = await Bank.findOneAndUpdate(
-        { _id: existing._id },
-        { $set: payload },
-        { new: true, runValidators: true }
-      );
-      return { bank: updated, isNew: false };
-    }
+  const existing = await Bank.findOne(findFilter);
+
+  if (existing) {
+    const updated = await Bank.findOneAndUpdate(
+      { _id: existing._id },
+      { $set: payload },
+      { new: true, runValidators: true }
+    );
+    return { bank: updated, isNew: false };
   }
 
   const bank = await Bank.create({
@@ -131,11 +125,11 @@ async function getBufferAndParsed(job) {
   let buffer;
 
   if (type === 'base64') {
-    const { pdfBase64, password } = payload || {};
+    const { pdfBase64 } = payload || {};
     if (!pdfBase64) throw new Error('Missing pdfBase64 in job payload');
     buffer = Buffer.from(pdfBase64, 'base64');
   } else if (type === 's3') {
-    const { key, password } = payload || {};
+    const { key } = payload || {};
     if (!key) throw new Error('Missing key in job payload');
     buffer = await getFileBuffer(key);
   } else {
@@ -192,7 +186,7 @@ async function processStatementJob(jobId) {
   try {
     const { parsed, s3Key, pdfSizeBytes } = await getBufferAndParsed(job);
     const statementPassword = job?.payload?.password;
-    await upsertStatementPassword(job.userId, parsed, statementPassword);
+    await saveStatementPassword(job.userId, parsed, statementPassword);
 
     await StatementJob.updateOne(
       { _id: jobId },

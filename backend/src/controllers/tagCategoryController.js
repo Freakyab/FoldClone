@@ -15,8 +15,8 @@ const getCategories = async (req, res, next) => {
 
     if (transactionType === 'credit' || transactionType === 'debit') {
       filter.$or = [
-        { categoryType: transactionType },
-        { categoryType: 'both' },
+        { isActive: true, categoryType: transactionType },
+        { isActive: true, categoryType: 'both' },
       ];
     }
 

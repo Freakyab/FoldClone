@@ -31,22 +31,6 @@ const statementPasswordSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-statementPasswordSchema.index(
-  { userId: 1, accountNumber: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { accountNumber: { $type: 'string' } },
-  }
-);
-
-statementPasswordSchema.index(
-  { userId: 1, bankName: 1, accountNumber: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { accountNumber: null },
-  }
-);
-
 statementPasswordSchema.index({ userId: 1, lastUsedAt: -1 });
 
 module.exports = mongoose.model('StatementPassword', statementPasswordSchema);

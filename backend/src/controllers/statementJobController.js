@@ -68,7 +68,14 @@ const processNextStatementJob = async (req, res, next) => {
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = req.headers.authorization;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+        success: false,
+        message: 'Cron endpoint is not configured',
+        errorCode: 'CRON_SECRET_NOT_SET',
+      });
+    }
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: 'Unauthorized',
