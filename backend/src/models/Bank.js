@@ -11,6 +11,20 @@ const ACCOUNT_TYPES = [
   "other",
 ];
 
+function buildOwnedBankFilter(userId) {
+  return {
+    userId,
+    isDeleted: { $ne: true },
+  };
+}
+
+function buildLinkedBankFilter(userId) {
+  return {
+    ...buildOwnedBankFilter(userId),
+    isActive: { $ne: false },
+  };
+}
+
 const bankSchema = new mongoose.Schema(
   {
     userId: {
@@ -65,6 +79,27 @@ const bankSchema = new mongoose.Schema(
       type: String,
       default: "#4F46E5",
     },
+    icon: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    isPrimary: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -72,8 +107,17 @@ const bankSchema = new mongoose.Schema(
 );
 
 bankSchema.index(
-  { userId: 1, name: 1 },
+  { userId: 1, name: 1, accountNumber: 1 },
   { unique: true, partialFilterExpression: { isDeleted: false } },
 );
+bankSchema.index({ userId: 1, isDeleted: 1, isActive: 1, isPrimary: -1, createdAt: -1 });
+
+bankSchema.statics.buildOwnedBankFilter = function buildOwnedBankFilterStatic(userId) {
+  return buildOwnedBankFilter(userId);
+};
+
+bankSchema.statics.buildLinkedBankFilter = function buildLinkedBankFilterStatic(userId) {
+  return buildLinkedBankFilter(userId);
+};
 
 module.exports = mongoose.model("Bank", bankSchema);

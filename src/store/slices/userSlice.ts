@@ -15,6 +15,8 @@ import {
 import { getFirebaseAuth } from '@/lib/firebase';
 
 export interface UserState {
+  /** Profile.specificId from backend (5-char uppercase identifier) */
+  specificId: string;
   name: string;
   token: string | null;
   username: string;
@@ -26,6 +28,7 @@ export interface UserState {
 }
 
 const initialState: UserState = {
+  specificId: '',
   name: '',
   token: null,
   username: '',
@@ -57,7 +60,7 @@ function firebaseUserToCredentials(user: FirebaseUser): LoginCredentials {
 
 /** Login/signup against backend and store returned user + token */
 export const loginUser = createAsyncThunk<
-  { name: string; username: string; token: string },
+  { specificId: string; name: string; username: string; token: string },
   LoginCredentials,
   { rejectValue: string }
 >(
@@ -90,7 +93,10 @@ export const loginUser = createAsyncThunk<
       const data = (await response.json()) as {
         success: boolean;
         message: string;
-        data?: { user: { name?: string; email?: string; username?: string }; token: string };
+        data?: {
+          user: { name?: string; email?: string; username?: string; specificId?: string };
+          token: string;
+        };
       };
 
       if (!response.ok || !data.success || !data.data) {
@@ -99,6 +105,7 @@ export const loginUser = createAsyncThunk<
 
       const user = data.data.user;
       return {
+        specificId: user.specificId ?? '',
         name: user.name ?? trimmedName,
         username: user.username ?? user.email ?? trimmedUsername,
         token: data.data.token,
@@ -112,7 +119,7 @@ export const loginUser = createAsyncThunk<
 
 /** Login against backend using email + password */
 export const loginExistingUser = createAsyncThunk<
-  { name: string; username: string; token: string },
+  { specificId: string; name: string; username: string; token: string },
   LoginCredentials,
   { rejectValue: string }
 >(
@@ -139,7 +146,10 @@ export const loginExistingUser = createAsyncThunk<
       const data = (await response.json()) as {
         success: boolean;
         message: string;
-        data?: { user: { name?: string; email?: string; username?: string }; token: string };
+        data?: {
+          user: { name?: string; email?: string; username?: string; specificId?: string };
+          token: string;
+        };
       };
 
       if (!response.ok || !data.success || !data.data) {
@@ -149,6 +159,7 @@ export const loginExistingUser = createAsyncThunk<
       const user = data.data.user;
       const fallbackName = credentials.name.trim() || trimmedUsername;
       return {
+        specificId: user.specificId ?? '',
         name: user.name ?? user.email ?? fallbackName,
         username: user.username ?? user.email ?? trimmedUsername,
         token: data.data.token,
@@ -232,8 +243,14 @@ const userSlice = createSlice({
   reducers: {
     setUser: (
       state,
-      action: PayloadAction<{ name: string; username: string; password: string }>,
+      action: PayloadAction<{
+        specificId?: string;
+        name: string;
+        username: string;
+        password: string;
+      }>,
     ) => {
+      state.specificId = action.payload.specificId ?? '';
       state.name = action.payload.name;
       state.token = null;
       state.username = action.payload.username;
@@ -244,6 +261,7 @@ const userSlice = createSlice({
       state.shouldUploadStatement = false;
     },
     logoutUser: (state) => {
+      state.specificId = '';
       state.name = '';
       state.token = null;
       state.username = '';
@@ -267,6 +285,7 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        state.specificId = action.payload.specificId;
         state.name = action.payload.name;
         state.username = action.payload.username;
         state.password = '';
@@ -286,6 +305,7 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(loginExistingUser.fulfilled, (state, action) => {
+        state.specificId = action.payload.specificId;
         state.name = action.payload.name;
         state.username = action.payload.username;
         state.password = '';

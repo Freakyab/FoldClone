@@ -10,6 +10,7 @@ const {
   setPrimaryBank,
   uploadBankStatement,
   uploadBankStatementFromS3,
+  getSavedStatementPasswords,
 } = require('../controllers/bankController');
 
 router.use(protect);
@@ -17,6 +18,7 @@ router.use(protect);
 router.post('/', createBank);
 router.post('/upload-statement', uploadBankStatement);
 router.post('/upload-statement-from-s3', uploadBankStatementFromS3);
+router.get('/saved-passwords', getSavedStatementPasswords);
 router.get('/', getBanks);
 router.get('/:id', getBankById);
 router.patch('/:id', updateBank);

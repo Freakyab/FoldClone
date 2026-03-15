@@ -1,6 +1,6 @@
 import * as DocumentPicker from "expo-document-picker";
 import * as LegacyFileSystem from "expo-file-system/legacy";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,9 +10,11 @@ import {
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setActiveJob, selectIsStatementJobActive } from "@/store/slices/statementJobSlice";
 import { completeStatementSetup } from "@/store/slices/userSlice";
 
 import { API_BASE_URL } from "@/lib/apibase";
@@ -23,6 +25,21 @@ export interface UploadStatementFormProps {
   completeSetupOnSuccess?: boolean;
 }
 
+interface SavedStatementPassword {
+  _id: string;
+  bankName: string;
+  accountNumber?: string | null;
+  password: string;
+}
+
+function maskAccountNumber(accountNumber: string | null | undefined): string {
+  if (!accountNumber || typeof accountNumber !== "string") return "••••";
+  const trimmed = accountNumber.trim();
+  if (trimmed.length <= 4) return "****";
+  const last4 = trimmed.slice(-4);
+  return "****" + last4;
+}
+
 export function UploadStatementForm({
   onSuccess,
   completeSetupOnSuccess = true,
@@ -30,10 +47,41 @@ export function UploadStatementForm({
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.user.token);
+  const isStatementJobActive = useAppSelector(selectIsStatementJobActive);
 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [savedPasswords, setSavedPasswords] = useState<SavedStatementPassword[]>([]);
+  const [isLoadingSavedPasswords, setIsLoadingSavedPasswords] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+
+    let cancelled = false;
+    const loadSavedPasswords = async () => {
+      try {
+        setIsLoadingSavedPasswords(true);
+        const res = await fetch(`${API_BASE_URL}/api/banks/saved-passwords`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (res.ok && data.success && Array.isArray(data.data)) {
+          setSavedPasswords(data.data);
+        }
+      } catch {
+        // Keep silent; this is optional convenience data.
+      } finally {
+        if (!cancelled) setIsLoadingSavedPasswords(false);
+      }
+    };
+
+    void loadSavedPasswords();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const handlePickAndUpload = useCallback(async () => {
     const passwordToUse = password;
@@ -43,6 +91,11 @@ export function UploadStatementForm({
 
       if (!token) {
         setError("Authentication token is missing. Please log in again.");
+        return;
+      }
+
+      if (isStatementJobActive) {
+        setError("A statement is already being processed. Please wait.");
         return;
       }
 
@@ -127,6 +180,13 @@ export function UploadStatementForm({
         return;
       }
 
+      if (response.status === 202 && data.data?.jobId) {
+        dispatch(setActiveJob({ jobId: data.data.jobId, status: "pending" }));
+        setIsUploading(false);
+        onSuccess?.();
+        return;
+      }
+
       if (completeSetupOnSuccess) {
         dispatch(completeStatementSetup());
       }
@@ -137,7 +197,7 @@ export function UploadStatementForm({
       setError(message);
       setIsUploading(false);
     }
-  }, [dispatch, token, password, onSuccess, completeSetupOnSuccess]);
+  }, [dispatch, token, password, onSuccess, completeSetupOnSuccess, isStatementJobActive]);
 
   return (
     <View style={styles.content}>
@@ -161,6 +221,50 @@ export function UploadStatementForm({
         onChangeText={setPassword}
       />
 
+      {isLoadingSavedPasswords ? (
+        <ThemedText type="small" themeColor="textMuted">
+          Loading saved passwords...
+        </ThemedText>
+      ) : null}
+
+      {savedPasswords.length > 0 ? (
+        <View style={styles.savedPasswordsWrap}>
+          <ThemedText type="small" themeColor="textMuted">
+            Saved passwords (tap to autofill):
+          </ThemedText>
+          <View style={styles.savedPasswordList}>
+            {savedPasswords.map((item) => (
+              <Pressable
+                key={item._id}
+                onPress={() => setPassword(item.password)}
+                style={({ pressed }) => [
+                  styles.savedPasswordItem,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.backgroundElement,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}>
+                <View style={styles.savedPasswordItemInner}>
+                  <AppIcon
+                    name="building-2"
+                    size={22}
+                    color={theme.textSecondary}
+                    style={styles.savedPasswordIcon}
+                  />
+                  <View style={styles.savedPasswordTextWrap}>
+                    <ThemedText type="smallBold">{item.bankName}</ThemedText>
+                    <ThemedText type="small" themeColor="textMuted">
+                      {maskAccountNumber(item.accountNumber)}
+                    </ThemedText>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {error ? (
         <ThemedText type="small" themeColor="accentRed" style={styles.error}>
           {error}
@@ -169,16 +273,20 @@ export function UploadStatementForm({
 
       <Pressable
         onPress={handlePickAndUpload}
-        disabled={isUploading}
+        disabled={isUploading || isStatementJobActive}
         style={({ pressed }) => [
           styles.button,
           {
             backgroundColor: theme.accentBlue,
-            opacity: isUploading ? 0.6 : pressed ? 0.9 : 1,
+            opacity: isUploading || isStatementJobActive ? 0.6 : pressed ? 0.9 : 1,
           },
         ]}>
         {isUploading ? (
           <ActivityIndicator color="#FFFFFF" />
+        ) : isStatementJobActive ? (
+          <ThemedText style={styles.buttonText}>
+            Processing in progress…
+          </ThemedText>
         ) : (
           <ThemedText style={styles.buttonText}>
             Choose PDF and upload
@@ -217,5 +325,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     fontSize: 16,
+  },
+  savedPasswordsWrap: {
+    gap: Spacing.one,
+  },
+  savedPasswordList: {
+    gap: Spacing.one,
+  },
+  savedPasswordItem: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  savedPasswordItemInner: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  savedPasswordIcon: {
+    marginRight: Spacing.two,
+  },
+  savedPasswordTextWrap: {
+    flex: 1,
+    gap: 2,
   },
 });

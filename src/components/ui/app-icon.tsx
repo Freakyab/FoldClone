@@ -11,6 +11,7 @@ type AppIconComponent = React.ComponentType<{
 }>;
 
 export type AppIconName =
+  | 'alert-circle'
   | 'arrow-left-right'
   | 'bell'
   | 'bell-off'
@@ -18,6 +19,7 @@ export type AppIconName =
   | 'building-2'
   | 'calendar'
   | 'check'
+  | 'check-circle'
   | 'chevron-down'
   | 'chevron-left'
   | 'chevron-right'
@@ -46,6 +48,7 @@ export type AppIconName =
   | 'x';
 
 const APP_ICON_MAP: Record<AppIconName, MaterialIconName> = {
+  'alert-circle': 'alert-circle-outline',
   'arrow-left-right': 'swap-horizontal',
   bell: 'bell-outline',
   'bell-off': 'bell-off-outline',
@@ -58,6 +61,7 @@ const APP_ICON_MAP: Record<AppIconName, MaterialIconName> = {
   'chevron-right': 'chevron-right',
   'chevron-up': 'chevron-up',
   'circle-x': 'close-circle-outline',
+  'check-circle': 'check-circle-outline',
   'credit-card': 'credit-card-outline',
   ellipsis: 'dots-horizontal',
   'file-text': 'file-document-outline',

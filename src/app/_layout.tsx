@@ -12,6 +12,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { LoginScreen } from '@/components/login-screen';
+import { StatementProcessingScreen } from '@/components/statement-processing-screen';
 import { UploadStatementScreen } from '@/components/upload-statement-screen';
 import { Colors, NavigationThemes, PaperThemes } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -51,9 +52,16 @@ function AppContent() {
   const shouldUploadStatement = useAppSelector(
     (state) => state.user.shouldUploadStatement,
   );
+  const activeJobId = useAppSelector(
+    (state) => state.statementJob.activeJobId,
+  );
 
   if (!isLoggedIn) {
     return <LoginScreen />;
+  }
+
+  if (activeJobId) {
+    return <StatementProcessingScreen />;
   }
 
   if (shouldUploadStatement) {

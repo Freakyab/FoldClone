@@ -11,18 +11,24 @@ import {
 } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import homeReducer from './slices/homeSlice';
 import userReducer from './slices/userSlice';
 import transactionReducer from './slices/transactionSlice';
+import widgetsReducer from './slices/widgetsSlice';
+import statementJobReducer from './slices/statementJobSlice';
 
 const rootReducer = combineReducers({
+  home: homeReducer,
   user: userReducer,
   transactions: transactionReducer,
+  widgets: widgetsReducer,
+  statementJob: statementJobReducer,
 });
 
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['user'],
+  whitelist: ['user', 'widgets', 'statementJob'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

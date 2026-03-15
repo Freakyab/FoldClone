@@ -25,7 +25,6 @@ const createTransaction = async (req, res, next) => {
 
 const getTransactions = async (req, res, next) => {
   try {
-    console.log( 'getTransactions', req.query);
     const {
       page = DEFAULT_PAGE,
       limit = DEFAULT_LIMIT,
@@ -121,7 +120,6 @@ const getTransactions = async (req, res, next) => {
 const getTransactionById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log( 'id', id);
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -145,7 +143,6 @@ const getTransactionById = async (req, res, next) => {
       });
     }
 
-    console.log( 'transaction', transaction);
     res.status(StatusCodes.OK).json({
       success: true,
       data: transaction,
@@ -168,9 +165,19 @@ const updateTransaction = async (req, res, next) => {
     }
 
     const allowedFields = [
-      'amount', 'type', 'category', 'tagKeys', 'description',
-      'note', 'paymentMode', 'transactionDate', 'status',
-      'currency', 'referenceId', 'bankId',
+      'amount',
+      'type',
+      'category',
+      'tagKeys',
+      'notes',
+      'otherDetails',
+      'paymentMode',
+      'transactionDate',
+      'status',
+      'currency',
+      'referenceId',
+      'bankId',
+      'excludedFromCashFlow',
     ];
 
     const updates = {};
